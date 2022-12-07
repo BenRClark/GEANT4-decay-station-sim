@@ -1,0 +1,180 @@
+/*
+ * A hacky little ROOT macro to read in formatted results files,
+ * plot a summed efficiency curve from the individual crystal
+ * fits, and fit the efficiency curve with some functon.
+ * -- ASC 4/13/21
+ */
+
+#include "Riostream.h"
+
+// Doing this every time is annoying
+void Print(vector<Double_t> v)
+{
+  for(int i=0; i<v.size(); i++)
+    cout << v[i] << " ";
+  cout << "\n";
+}
+
+// Summed efficiency
+Double_t SumEff(vector<Double_t> v)
+{
+  Double_t eff=0;
+  for(int i=0; i<v.size(); i++)
+    eff += v[i];
+  return eff;
+}
+
+// Summed efficiency error in quadrature
+Double_t SumEffErr(vector<Double_t> v)
+{
+  Double_t deff=0;
+  for(int i=0; i<v.size(); i++)
+    deff += v[i]*v[i];
+  return sqrt(deff);
+}
+
+void FitEfficiencyDownstream()
+{
+  ifstream infile;
+
+  // Values to read in from results file
+  Double_t energy, chan, dchan, cts, dcts, eff, deff;
+  // Results storage -- some kind of n-dimensional array likely better but lets do it quick
+  // vector<Double_t> eff123, deff123, eff247, deff247, eff591, deff591, eff723, deff723, eff873, deff873, eff996, deff996, eff1004, deff1004, eff1274, deff1274, eff1596, deff1596;
+     vector<Double_t> eff123, deff123, eff247, deff247, eff591, deff591, eff723, deff723, eff873, deff873, eff996, deff996, eff1004, deff1004, eff1274, deff1274;
+  // Loop over file list
+  for(int i=0; i<64; i++) {
+    
+    infile.open(Form("Clover_%i_Results.txt",i));
+
+    if(!infile.is_open()) {
+      cerr << "File " << Form("Clover_%i_Results.txt",i) << " could not be opened, moving on...\n";
+    } else {
+      // Skip first two lines of calibration pars
+      infile.ignore(1000,'\n');
+      infile.ignore(1000,'\n');
+
+      // Reset
+      energy = chan = dchan = cts = dcts = eff = deff = 0;
+
+      // Read in data
+      // Ugh... checking against the stream because its easy
+      while(infile >> energy >> chan >> dchan >> cts >> dcts >> eff >> deff) {
+	// // Print it back if you want
+	// cout << energy << " " << chan << " "  << dchan << " " << cts << " " << dcts << " " << eff << " " << deff << endl;
+
+	// Thats just turrible, but at least it works
+	if(energy == 123.1) {
+	  eff123.push_back(eff);
+	  deff123.push_back(deff);
+	}	
+	if(energy == 247.7) {
+	  eff247.push_back(eff);
+	  deff247.push_back(deff);
+	}
+	if(energy == 591.8) {
+	  eff591.push_back(eff);
+	  deff591.push_back(deff);
+	}	
+	if(energy == 723.3) {
+	  eff723.push_back(eff);
+	  deff723.push_back(deff);
+	}	
+	if(energy == 873.2) {
+	  eff873.push_back(eff);
+	  deff873.push_back(deff);
+	}
+	if(energy == 996.3) {
+	  eff996.push_back(eff);
+	  deff996.push_back(deff);
+	}
+	if(energy == 1004.7) {
+	  eff1004.push_back(eff);
+	  deff1004.push_back(deff);
+	}
+	if(energy == 1274.5) {
+	  eff1274.push_back(eff);
+	  deff1274.push_back(deff);
+	}
+	// if(energy == 1596.4) {
+	//   eff1596.push_back(eff);
+	//   deff1596.push_back(deff);
+	// }
+      }    
+      infile.close();
+    }  
+  }
+
+  // Hardcoding because... Because.
+  //Changing to 30./29. from 58./51. 05/04/2021 DCS
+  Double_t scale = 30./29.; // Crystals in experiment divided by crystal calibration files
+  //Changing all these arrays to match the downstream energy values
+  Double_t x[8] = {123.1,247.7,591.8,723.3,873.2,996.3,1004.7,1274.5};
+  Double_t ex[8] = {};
+  // Yikes
+  Double_t y[8] = {scale*SumEff(eff123),scale*SumEff(eff247),scale*SumEff(eff591),scale*SumEff(eff723),scale*SumEff(eff873),scale*SumEff(eff996),scale*SumEff(eff1004),scale*SumEff(eff1274)};
+  Double_t ey[8] = {scale*SumEffErr(deff123),scale*SumEffErr(deff247),scale*SumEffErr(deff591),scale*SumEffErr(deff723),scale*SumEffErr(deff873),scale*SumEffErr(deff996),scale*SumEffErr(deff1004),scale*SumEffErr(deff1274)};
+
+  // Remove statistics box and title
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
+
+  // Efficiency vs energy plot
+  //Changing to TGraphErrors(8,x,y,ex,ey) from (9,x,y,ex,ey)
+  auto gr = new TGraphErrors(8,x,y,ex,ey);
+  gr->SetMarkerStyle(21);
+  gr->GetXaxis()->SetTitle("Energy [keV]");
+  gr->GetYaxis()->SetTitle("Efficiency [%]");
+  
+  // Fit function for efficiency (from radware high energy component)
+  double elow = 100;
+  double ehigh = 1800;
+  TF1* fitf = new TF1("fitf","exp([0]+[1]*log(x)+[2]*log(x)*log(x))",elow,ehigh);
+  fitf->SetParameter(0,-3);
+  fitf->SetParameter(1,1.5);
+  fitf->SetParameter(2,-0.2);
+  gr->Fit("fitf","RQ");
+
+  // Efficiency confidence intervals
+  int npts = 1000;
+  double range = ehigh-elow;
+  double step = range/npts;
+  TGraphErrors* ci = new TGraphErrors(npts);
+  for(Int_t i=0; i<npts; i++)
+    ci->SetPoint(i, elow+i*step, 0);
+  (TVirtualFitter::GetFitter())->GetConfidenceIntervals(ci,0.6827); // 1 sigma
+  ci->SetFillColorAlpha(kRed,0.25); // Only shows up on output, canvas doesnt display correctly
+
+  auto c = new TCanvas("c","c",800,600);
+  gr->Draw("ap");
+  ci->Draw("e3 same");
+  c->SaveAs("efficiency.png");
+
+  // Calculate efficiencies for 76Zn in order per NNDC
+  // Annoying conversion away from % to probabilities
+  double egamma[6] = {340.89,511.0,575.0,598.68,697.78,1337.09};
+  double eff_gamma[6] = {};
+  double err_eff_gamma[6] = {};
+  cout << "-----------------------------------------" << endl;
+  cout << "----------- 76Zn efficiencies -----------" << endl;
+  cout << "-----------------------------------------" << endl;
+  for(int i=0; i<6; i++) {
+    for(int j=1; j<npts; j++) {
+      double x0 = elow+(j-1)*step;
+      double y0 = ci->Eval(x0)/100.;
+      double ey0 = ci->GetEY()[j-1]/100.0;
+      double x1 = elow+j*step;
+      double y1 = ci->Eval(x1)/100.;
+      double ey1 = ci->GetEY()[j]/100.0;
+
+      // Do linear interpolation to get efficiencies for gamma-ray list
+      if(x1 > egamma[i]) {
+	eff_gamma[i] = y0 + (egamma[i]-x0)*(y1-y0)/(x1-x0);
+	err_eff_gamma[i] = ey0 + (egamma[i]-x0)*(ey1-ey0)/(x1-x0);
+	cout << egamma[i] << ": " << 100.0*eff_gamma[i] << " +/- " << 100.0*err_eff_gamma[i] << " %" << endl;
+	break;      
+      }
+    }
+  }
+  
+}

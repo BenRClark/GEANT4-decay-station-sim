@@ -1,0 +1,15 @@
+/tracking/storeTrajectory 1
+
+/vis/open OGLSX
+
+/vis/scene/create
+/vis/scene/add/volume
+/vis/scene/add/trajectories
+/vis/sceneHandler/attach
+
+/vis/viewer/set/viewpointThetaPhi 135 45
+/vis/viewer/set/style surface
+
+/vis/viewer/refresh
+
+/vis/viewer/update

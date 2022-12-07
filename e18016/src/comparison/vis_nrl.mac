@@ -1,0 +1,68 @@
+###############################################################################
+#                                                                         #
+# THIS TEST GENERATES NUCLEI OF F-24 AT THE CENTRE OF THE TARGET 
+# WHICH IS THE ORIGIN. 
+#  
+################################################################################
+
+#/gedssdnrl/analysis/dirname 
+/gedssdnrl/analysis/filename temp
+
+/gedssdnrl/phys/SelectPhysics LowEnergy_EM_Livermore
+#/gedssdnrl/phys/SelectPhysics LowEnergy_EM
+
+#
+#/gedssdnrl/det/setGeThickDetectorThickness 15 mm
+#/gedssdnrl/det/setGeThinDetectorMate Vacuum
+#/gedssdnrl/det/UseGeThickDetector false
+#/gedssdnrl/det/UseGeThickDetectorCryo false
+#/gedssdnrl/det/UseGeThickDetectorCryoEndCap false
+#/gedssdnrl/det/UseGeThinDetector true
+/gedssdnrl/det/UseSega false
+/gedssdnrl/det/UseClover true
+/run/initialize
+/run/setCutForRegion GeThickDetector 0.010 mm
+
+/vis/scene/create Test.heprep.zip
+#/vis/scene/create vis.heprep.zip
+#/vis/open HepRepFile
+/vis/open HepRepXML
+/vis/drawVolume
+/vis/scene/add/trajectories
+
+#/run/setCutForRegion Target 10 cm
+#/run/setCutForRegion GeThickDetector 0.010 mm
+#/run/setCutForRegion GeThinDetector 0.010 mm
+/run/verbose 0
+/event/verbose 0
+/tracking/verbose 0
+/grdm/verbose 0
+#/grdm/noVolumes
+#/grdm/selectVolume Detector
+/grdm/allVolumes
+#
+#/gps/position 0.3 0 6.85 cm
+#/gps/position 0.65 0.4 7.30 cm
+#/gps/ang/type iso
+#/gps/position 50.5 50.5 146.05 mm
+#/gps/position -3.9 3.5 14.445 cm
+#/gps/position -1 1 6.985 cm
+#/gps/position 0 0 -.45 cm
+#/gps/position -4.0 3.3 14.366 cm
+#/gps/position 0.15 0.15 7.62 cm
+/gps/position -4.4 2.9 15.24 cm
+#/gps/energy 123.1 keV
+/gps/particle gamma
+#/gps/ion 63 155 0 0
+#/gps/energy 100 keV
+#/gps/particle gamma
+#ion 
+#/gps/ion 28 90 0  0
+#
+
+# No daughter decays in analogue MC mode
+#/grdm/analogueMC 1
+#/grdm/nucleusLimits 90 90 28 28
+/run/beamOn 1
+
+/vis/viewer/flush

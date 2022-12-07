@@ -1,0 +1,115 @@
+###############################################################################
+#                                                                         #
+# THIS TEST GENERATES NUCLEI OF F-24 AT THE CENTRE OF THE TARGET 
+# WHICH IS THE ORIGIN. 
+#  
+################################################################################
+
+#filename
+
+#/gedssd_bc/analysis/dirname 
+#/e18016_sim/analysis/filename /data/e18016/simulations/analysis/e18016_Eff_100keV_test
+#/e18016_sim/analysis/filename /home/sl2008/simulations/e18016_sim/sim_analysis/simrootfiles/100keV_test.root
+#/e18016_sim/analysis/filename /home/sl2008/simulations/e18016_sim/e18016_sim/e18016_sim/sim_analysis/simrootfiles/100keV_test
+/e18016_sim/analysis/filename /home/sl2008/simulations/e18016_sim/e18016_sim/e18016_sim/sim_analysis/simrootfiles1/100keV_test
+
+#Physics lists
+
+#/gedssd_bc/phys/SelectPhysics LowEnergy_EM_Livermore
+#/gedssd_bc/phys/SelectPhysics LowEnergy_EM
+#/gedssd_bc/phys/SelectPhysics Standard_EM
+
+#Pick the detectors to visualize
+
+#
+#uncommonly used detectors - set to false unless you need 
+#something specific here
+/e18016_sim/det/Use3Hen false
+/e18016_sim/det/UseMTC false
+/e18016_sim/det/UseLENDA false
+/e18016_sim/det/UseGetest false
+/e18016_sim/det/UseEXOtest false
+
+#more commonly used detectors in beta decay setups
+/e18016_sim/det/UseSiDSSD false
+/e18016_sim/det/setGeThickDetectorThickness 15 mm
+/e18016_sim/det/setGeThinDetectorMate Vacuum
+/e18016_sim/det/UseGeThickDetector false
+/e18016_sim/det/UseGeThickDetectorCryo false
+/e18016_sim/det/UseGeThickDetectorCryoEndCap false
+/e18016_sim/det/UseGeThinDetector false
+/e18016_sim/det/UseSega true
+/e18016_sim/det/UseClover true
+/e18016_sim/det/UseLaBr3 true
+/e18016_sim/det/UseEJ204Scint false
+/e18016_sim/det/UseSiScint true
+/e18016_sim/det/UsePipe true
+/e18016_sim/det/UsePSPMT false
+/e18016_sim/det/UseLaBr3Frame false
+
+#initialize
+
+/run/initialize
+#/run/setCutForRegion GeThickDetector 0.010 mm
+
+#open with OpenGL
+
+#/vis/open OGL 1050x1050-0+0
+#/vis/open OGLSX 900x900-0+0
+
+# Disable auto refresh and quieten vis messages whilst scene and
+# trajectories are established:
+#/vis/viewer/set/autoRefresh false
+#/vis/verbose errors
+
+
+#draw the volume
+
+#/vis/scene/create
+#/vis/open HepRepFile
+#/vis/drawVolume
+
+#trajectory stuff
+
+#/vis/scene/add/trajectories
+#/vis/viewer/flush
+
+#add coordinate axes
+
+#/vis/scene/add/axes 0 0 0 0.3 m
+
+#/vis/viewer/set/style surface
+#/vis/viewer/set/style wireframe
+#/vis/viewer/set/hiddenEdge 1
+
+#/vis/scene/add/trajectories
+#/vis/scene/add/hits
+
+#/vis/scene/endOfEventAction accumulate
+#/vis/viewer/set/autoRefresh true
+#/vis/verbose warnings
+
+/grdm/allVolumes
+
+#source
+
+#/gps/position 0.3 0 6.85 cm
+#/gps/position 0.65 0.4 7.30 cm
+/gps/ang/type iso
+/gps/position 0 0 -0.05 cm
+#/gps/energy 123.1 keV
+/gps/particle gamma
+#/gps/ion 63 155 0 0
+/gps/energy 100 keV
+/gps/particle gamma
+#ion 
+#/gps/ion 28 90 0  0
+#
+
+
+
+/run/beamOn 10000000
+
+# Re-establish auto refreshing and verbosity:
+#/vis/viewer/set/autoRefresh true
+#/vis/verbose warnings

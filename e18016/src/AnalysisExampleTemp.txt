@@ -1,0 +1,588 @@
+//was the first attempt to just disqualify max E strip-didn't result in gaining back counts
+// stripdifx=maxchx-stripimpx; //will be positive for strips greater than the imp strip
+    //stripdify=maxchy-stripimpy; //will be positive for strips greater than the imp strip
+    /* stripdifx=maxchf-stripimpx;
+    //try just for 1-d and see what you come up with
+    if(stripdifx>0){
+      for(int x=1;x<stripimpx+1;x++){//only want the lower numbered strips excpet the implant pixel
+	if(totaledep_stripx[x]>20) hEventsSeparateFromElectron->Fill(totaledep_stripx[x]);
+      }
+    }else if(stripdifx>0){
+      for(int x=stripimpx+1;x<17;x++){//only want the higher numbered strips excpet the implant pixel
+	if(totaledep_stripx[x]>20) hEventsSeparateFromElectron->Fill(totaledep_stripx[x]);
+      }
+    }else{
+      for(int x=1;x<17;x++){//if it's in the same pixel, want all except that pixel
+	if(totaledep_stripx[x]>20&&x!=maxchf) hEventsSeparateFromElectron->Fill(totaledep_stripx[x]);
+      }
+    }
+    if(stripdifx==0 && stripdify==0){//will assume if it's in the same strip that any other strip is ok for now
+      for(int x=1;x<17;x++){
+	for(int y=1;y<stripimpy+1;y++){
+	  if((maxchy+1!=y)&&(maxchx+1!=x)&&(totaledepxy[x][y]>20)){//match exp lower thresh-maxch is in realstrips, y and x are not
+	    hEventsSeparateFromElectron->Fill(totaledepxy[x][y]);//plot of all channels except max energy channel
+	  }
+	}
+      }
+    }else if(stripdifx>0&&stripdify>0){
+      for(int x=1;x<stripimpx+1;x++){//strip imp is in "real" strip numbers
+	for(int y=1;y<stripimpy+1;y++){
+	  if(totaledepxy[x][y]>20)  hEventsSeparateFromElectron->Fill(totaledepxy[x][y]);
+	  }
+	}
+    }else if(stripdifx>0&&stripdify<0){
+      for(int x=1;x<stripimpx+1;x++){//strip imp is in "real" strip numbers
+	for(int y=stripimpy+1;y<17;y++){
+	  if(totaledepxy[x][y]>20) hEventsSeparateFromElectron->Fill(totaledepxy[x][y]);
+	}
+      }
+    }else if(stripdifx<0&&stripdify>0){
+      for(int x=stripimpx+1;x<17;x++){//strip imp is in "real" strip numbers
+	for(int y=1;y<stripimpy+1;y++){
+	  if(totaledepxy[x][y]>20) hEventsSeparateFromElectron->Fill(totaledepxy[x][y]);
+	}
+      }
+    }else if(stripdifx<0&&stripdify<0){
+      for(int x=stripimpx+1;x<17;x++){//strip imp is in "real" strip numbers
+	for(int y=stripimpy+1;y<17;y++){
+	  if(totaledepxy[x][y]>20) hEventsSeparateFromElectron->Fill(totaledepxy[x][y]);
+	}
+      }
+    }else if(stripdifx==0&&stripdify!=0){
+      for(int x=1;x<17;x++){//strip imp is in "real" strip numbers-only x strip we don't want is the implant strip
+	if(x!=stripimpx+1){
+	  if(stripdify>0){
+	    for(int y=1;y<stripimpy+1;y++){//want all stips up to implant if y is higher than imp
+	      if(totaledepxy[x][y]>20) hEventsSeparateFromElectron->Fill(totaledepxy[x][y]);
+	    }
+	  }else{
+	    for(int y=stripimpy+1;y<17;y++){//want the strips greater than implant if y is less than imp
+	      if(totaledepxy[x][y]>20) hEventsSeparateFromElectron->Fill(totaledepxy[x][y]);
+	    }
+	  }
+	}
+      }
+    }else if(stripdifx!=0&&stripdify==0){
+      for(int y=1;y<17;y++){//strip imp is in "real" strip numbers-only x strip we don't want is the implant strip
+	if(y!=stripimpy+1){
+	  if(stripdifx>0){
+	    for(int x=1;x<stripimpx+1;x++){//want all stips up to implant if y is higher than imp
+	      if(totaledepxy[x][y]>20) hEventsSeparateFromElectron->Fill(totaledepxy[x][y]);
+	    }
+	  }else{
+	      for(int x=stripimpx+1;x<17;x++){//want the strips greater than implant if y is less than imp
+		if(totaledepxy[x][y]>20) hEventsSeparateFromElectron->Fill(totaledepxy[x][y]);
+	      }
+	    }
+	}
+      }
+      }*/
+
+#############################################################################################################################################
+Copy of AlgorithmV1
+     int maxesequal=0;
+    //int maxesequal=5;//so that I can just compare the maxes and bypass the algorithm
+    int secondequal=0;
+    int thirdequal=0;
+    if(countf==1&&countb==1){//start with mult one both way events-we know that the x and y must go together
+      totaledepxy[maxchf][maxchb]=totaledep_stripx[maxchf];
+      // cout<<maxb<<" front"<<maxf<<endl;
+    }else /*(if(countf==countf)*/{//if they're not both equal to one-if there's only two/1 etc, it should just keep the higher maxes at 0
+      if(maxf-maxb<20&&maxf-maxb>-20){
+	totaledepxy[maxchf][maxchb]=totaledep_stripx[maxchf]; //if the maxes are equal to each other
+	maxesequal=1;
+      }
+      //cout<<maxb<<" front"<<maxf<<endl;
+      //second max
+      //  if(countf>=2){
+	for(int x=1;x<17;x++){
+	  //int y=x-1;
+	  // if(totaledep_stripx[x]>20){
+	  // if(countf==1){
+	  //  hMult1x->Fill(totaledep_stripx[x]);
+	  // }else{
+	  //  hMultmanyx->Fill(totaledep_stripx[x]);
+	  // }
+	  // }
+	  //   if(countf==countb){
+	  //finding second max
+	  if((totaledep_stripx[x]>secondmaxf)&&(totaledep_stripx[x]<maxf)){
+	    secondmaxf=totaledep_stripx[x];
+	    secondmaxchf=x;
+	  }
+	  if((totaledep_stripy[x]>secondmaxb)&&(totaledep_stripy[x]<maxb)){
+	    secondmaxb=totaledep_stripy[x];
+	    secondmaxchb=x;
+	  }
+	  // }
+	}
+	//	cout<<secondmaxb<<" front"<<secondmaxf<<endl;
+	if(maxesequal==1){//only equate second maxes if first maxes were also equal
+	  if(secondmaxf-secondmaxb<20&&secondmaxf-secondmaxb>-20){
+	    totaledepxy[secondmaxchf][secondmaxchb]=totaledep_stripx[secondmaxchf];
+	    maxesequal=2;//first and second maxes are both equal
+	  }
+	  
+	}else{
+	  if(secondmaxf-secondmaxb<20&&secondmaxf-secondmaxb>-20){
+	    totaledepxy[secondmaxchf][secondmaxchb]=totaledep_stripx[secondmaxchf];
+	    secondequal=2;
+	  }
+	}
+	//if(countf==1) cout<<maxf<<" "<<secondmaxf<<" "<<secondmaxb<<endl;//to check that it keeps one 0 and will still increment the other if need be
+	//  }//end countf>2
+      //third max
+	//   if(countf>=3){
+	for(int x=1;x<17;x++){
+	  //  if(countf==countb){
+	  if((totaledep_stripx[x]>thirdmaxf)&&(totaledep_stripx[x]<secondmaxf)){
+	    thirdmaxf=totaledep_stripx[x];
+	    thirdmaxchf=x;
+	  }
+	  if((totaledep_stripy[x]>thirdmaxb)&&(totaledep_stripy[x]<secondmaxb)){
+	    thirdmaxb=totaledep_stripy[x];
+	    thirdmaxchb=x;
+	  }
+	  //  }
+	}
+	if(maxesequal==2){//only equate third if all others were equal before
+	  if(thirdmaxf-thirdmaxb<20&&thirdmaxf-thirdmaxb>-20){
+	    totaledepxy[thirdmaxchf][thirdmaxchb]=totaledep_stripx[thirdmaxchf];
+	    maxesequal=3;
+	  }
+	}else{//so if first max was unequal
+	  if(thirdmaxf-thirdmaxb<20&&thirdmaxf-thirdmaxb>-20){
+	    totaledepxy[thirdmaxchf][thirdmaxchb]=totaledep_stripx[thirdmaxchf];
+	    if(secondequal==2){
+	      secondequal=3;
+	    }else{
+	      thirdequal=3;
+	    }
+	  }
+	}
+	//  }//end countf>3
+      //fourth max
+    //  if(countf>=4){
+	for(int x=1;x<17;x++){
+	  // if(countf==countb){
+	  if((totaledep_stripx[x]>fourthmaxf)&&(totaledep_stripx[x]<thirdmaxf)){
+	    fourthmaxf=totaledep_stripx[x];
+	    fourthmaxchf=x;
+	  }
+	  if((totaledep_stripy[x]>fourthmaxb)&&(totaledep_stripy[x]<thirdmaxb)){
+	    fourthmaxb=totaledep_stripy[x];
+	    fourthmaxchb=x;
+	  }
+      // }
+	}
+	if(maxesequal==3){//only equate fourth if all others were equal first
+	  if(fourthmaxf-fourthmaxb<20&&fourthmaxf-fourthmaxb>-20){
+	    totaledepxy[fourthmaxchf][fourthmaxchb]=totaledep_stripx[fourthmaxchf];
+	    maxesequal=4;
+	  }
+	}
+	//  }//end countf>4
+    }//end else if countf and countb are not 1
+    // cout<<maxesequal<<endl;
+    if(maxesequal==0){//none of the maxes match
+      /*if(countf==1){
+	if((maxf-(maxb+secondmaxb+thirdmaxb+fourthmaxb)<20)&&(maxf-(maxb+secondmaxb+thirdmaxb+fourthmaxb)>-20)){//this event is one strip with three strips on the other side
+	  totaledepxy[maxchf][maxchb]=maxb;
+	  totaledepxy[maxchf][secondmaxchb]=secondmaxb;
+	  totaledepxy[maxchf][thirdmaxchb]=thirdmaxb;
+	  totaledepxy[maxchf][fourthmaxchb]=fourthmaxb;
+	}
+      }else if(countb==1){//end countf==1
+	if((maxb-(maxf+secondmaxf+thirdmaxf+fourthmaxf)<20)&&(maxb-(maxf+secondmaxf+thirdmaxf+fourthmaxf)>-20)){//this event is one strip with three strips on the other side
+	  totaledepxy[maxchf][maxchb]=maxf;
+	  totaledepxy[secondmaxchf][maxchb]=secondmaxf;
+	  totaledepxy[thirdmaxchf][maxchb]=thirdmaxf;
+	  totaledepxy[fourthmaxchf][maxchb]=fourthmaxf;
+	  }*/
+      /* }else*/ if(((maxf-(secondmaxb+thirdmaxb+fourthmaxb))-(maxb-(secondmaxf+thirdmaxf+fourthmaxf))<20)&&((maxf-(secondmaxb+thirdmaxb+fourthmaxb))-(maxb-(secondmaxf+thirdmaxf+fourthmaxf))>-20)){//end countb==1
+	totaledepxy[maxchf][maxchb]=maxb-(secondmaxf+thirdmaxf+fourthmaxf);
+	totaledepxy[maxchf][secondmaxchb]=secondmaxb;
+	totaledepxy[maxchf][thirdmaxchb]=thirdmaxb;
+	totaledepxy[maxchf][fourthmaxchb]=fourthmaxb;
+	totaledepxy[secondmaxchf][maxchb]=secondmaxf;
+	totaledepxy[thirdmaxchf][maxchb]=thirdmaxf;
+	totaledepxy[fourthmaxchf][maxchb]=fourthmaxf;
+      }else if(secondequal==2){//so the max channels don't equal, but the second maxes are
+	if((maxf-(maxb+thirdmaxb+fourthmaxb)<20)&&(maxf-(maxb+thirdmaxb+fourthmaxb)>-20)){
+	    totaledepxy[maxchf][maxchb]=maxb;
+	    totaledepxy[maxchf][thirdmaxchb]=thirdmaxb;
+	    totaledepxy[maxchf][fourthmaxchb]=fourthmaxb;
+	  }
+	if((maxb-(maxf+thirdmaxf+fourthmaxf)<20)&&(maxb-(maxf+thirdmaxf+fourthmaxf)>-20)){
+	  totaledepxy[maxchf][maxchb]=maxf;
+	  totaledepxy[thirdmaxchf][maxchb]=thirdmaxf;
+	  totaledepxy[fourthmaxchf][maxchb]=fourthmaxf;
+	}
+
+      }else if(secondequal==3){//the max channels don't equal, but the third and second maxes do
+	if((maxf-(fourthmaxb+maxb)<20)&&(maxf-(fourthmaxb+maxb)>-20)){
+	  totaledepxy[maxchf][maxchb]=maxb;
+	  totaledepxy[maxchf][fourthmaxchb]=fourthmaxb;
+	}
+	if((maxb-(maxf+fourthmaxf)<20)&&(maxb-(maxf+fourthmaxf)>-20)){
+	  totaledepxy[maxchf][maxchb]=maxf;
+	  totaledepxy[fourthmaxchf][maxchb]=fourthmaxf;
+	}
+
+      }else if(thirdequal==3){//the max and second don't equal, but the third does
+	if((maxf-(maxb+secondmaxb+fourthmaxb)<20)&&(maxf-(maxb+secondmaxb+fourthmaxb)>-20)){
+	    totaledepxy[maxchf][maxchb]=maxb;
+	    totaledepxy[maxchf][secondmaxchb]=secondmaxb;
+	    totaledepxy[maxchf][fourthmaxchb]=fourthmaxb;
+	  }
+	if((maxb-(maxf+secondmaxf+fourthmaxf)<20)&&(maxb-(maxf+secondmaxf+fourthmaxf)>-20)){
+	  totaledepxy[maxchf][maxchb]=maxf;
+	  totaledepxy[secondmaxchf][maxchb]=secondmaxf;
+	  totaledepxy[fourthmaxchf][maxchb]=fourthmaxf;
+	}
+      }
+      
+    }else if(maxesequal==1){//so the maximum energy channels match, but the seccond doesn't
+      // if(countf==2){
+	if((secondmaxf-(secondmaxb+thirdmaxb+fourthmaxb)<20)&&(secondmaxf-(secondmaxb+thirdmaxb+fourthmaxb)>-20)){//all other events on back are on one line on the front
+	  totaledepxy[secondmaxchf][secondmaxchb]=secondmaxb;
+	  totaledepxy[secondmaxchf][thirdmaxchb]=thirdmaxb;//basically do the same with the second max as I did with the max above
+	  totaledepxy[secondmaxchf][fourthmaxchb]=fourthmaxb;
+	}else if((secondmaxf-(thirdmaxb+fourthmaxb)<20)&&(secondmaxf-(thirdmaxb+fourthmaxb)>-20)){
+	  totaledepxy[secondmaxchf][thirdmaxchb]=thirdmaxb;//basically do the same with the second max as I did with the max above
+	  totaledepxy[secondmaxchf][fourthmaxchb]=fourthmaxb;
+	  if((secondmaxb-thirdmaxf<20)&&(secondmaxb-thirdmaxf>-20)){//if the second max on the back does not corropsond to the second max on the front, see if it goes with one of the others
+	    totaledepxy[thirdmaxchf][secondmaxchb]=secondmaxb;
+	    
+	  }else if((secondmaxb-fourthmaxf<20)&&(secondmaxb-fourthmaxf>-20)){
+	    totaledepxy[fourthmaxchf][secondmaxchb]=secondmaxb;
+	  }else if(((secondmaxb-(thirdmaxf+fourthmaxf)<20)&&(secondmaxb-(thirdmaxf+fourthmaxf)>-20))){//doesn't seem to be many cases of this
+	    totaledepxy[thirdmaxchf][secondmaxchb]=thirdmaxf;
+	    totaledepxy[fourthmaxchf][secondmaxchb]=fourthmaxf;
+	  }//end checking if the other side's 2nd max is equal to some smaller max on the front
+	  //case where the second max is separated from the 
+	}else if((secondmaxb-(secondmaxf+thirdmaxf+fourthmaxf)<20)&&(secondmaxb-(secondmaxf+thirdmaxf+fourthmaxb)>-20)){//all other events on front are on one line with the back
+	  totaledepxy[secondmaxchf][secondmaxchb]=secondmaxf;
+	  totaledepxy[thirdmaxchf][secondmaxchb]=thirdmaxf;//basically do the same with the second max as I did with the max above
+	  totaledepxy[fourthmaxchf][secondmaxchb]=fourthmaxf;
+	}else if((secondmaxb-(thirdmaxf+fourthmaxf)<20)&&(secondmaxb-(thirdmaxf+fourthmaxb)>-20)){//all other events on front are on one line with the back
+	  totaledepxy[thirdmaxchf][secondmaxchb]=thirdmaxf;//basically do the same with the second max as I did with the max above
+	  totaledepxy[fourthmaxchf][secondmaxchb]=fourthmaxf;
+	  if((secondmaxf-thirdmaxb<20)&&(secondmaxf-thirdmaxb>-20)){//if the second max on the back does not corropsond to the second max on the front, see if it goes with one of the others
+	    totaledepxy[secondmaxchf][thirdmaxchb]=secondmaxf;
+	    
+	  }else if((secondmaxf-fourthmaxb<20)&&(secondmaxf-fourthmaxb>-20)){
+	    totaledepxy[secondmaxchf][fourthmaxchb]=secondmaxf;
+	  }else if(((secondmaxf-(thirdmaxb+fourthmaxb)<20)&&(secondmaxf-(thirdmaxb+fourthmaxb)>-20))){//doesn't seem to be many cases of this
+	    totaledepxy[secondmaxchf][thirdmaxchb]=thirdmaxb;
+	    totaledepxy[secondmaxchf][fourthmaxchb]=fourthmaxb;
+	  }//end checking if the other side's 2nd max is equal to some smaller max on the back
+	  //end for case where other side's 2nd max is the same as a lesser max on the back
+	}else if((secondmaxf-(secondmaxb+thirdmaxb)<20)&&(secondmaxf-(secondmaxb+thirdmaxb)>-20)){//there's a fourth max, but it's a separate event
+	  totaledepxy[secondmaxchf][secondmaxchb]=secondmaxb;
+	  totaledepxy[secondmaxchf][thirdmaxchb]=thirdmaxb;
+	  if((fourthmaxb-thirdmaxf<20)&&(fourthmaxb-thirdmaxf>-20)){
+	    totaledepxy[thirdmaxchf][fourthmaxchb]=thirdmaxf;
+	  }
+	}else if((secondmaxb-(secondmaxf+thirdmaxf)<20)&&(secondmaxb-(secondmaxf+thirdmaxf)>-20)){//all other events on front are on one line with the back
+	  totaledepxy[secondmaxchf][secondmaxchb]=secondmaxf;
+	  totaledepxy[thirdmaxchf][secondmaxchb]=thirdmaxf;
+	  if((fourthmaxf-thirdmaxb<20)&&(fourthmaxf-thirdmaxb>-20)){
+	    totaledepxy[fourthmaxchf][thirdmaxchb]=thirdmaxb;
+	  }
+	}else if((secondmaxf-(secondmaxb+fourthmaxb)<20)&&(secondmaxf-(secondmaxb+fourthmaxb)>-20)){//there's a fourth max, but it's a separate event
+	  totaledepxy[secondmaxchf][secondmaxchb]=secondmaxb;
+	  totaledepxy[secondmaxchf][fourthmaxchb]=fourthmaxb;
+	  if((thirdmaxb-thirdmaxf<20)&&(thirdmaxb-thirdmaxf>-20)){
+	    totaledepxy[thirdmaxchf][thirdmaxchb]=thirdmaxf;
+	  }
+	}else if((secondmaxb-(secondmaxf+fourthmaxf)<20)&&(secondmaxb-(secondmaxf+fourthmaxf)>-20)){//all other events on front are on one line with the back
+	  totaledepxy[secondmaxchf][secondmaxchb]=secondmaxf;
+	  totaledepxy[fourthmaxchf][secondmaxchb]=fourthmaxf;
+	  if((thirdmaxf-thirdmaxb<20)&&(thirdmaxf-thirdmaxb>-20)){
+	    totaledepxy[thirdmaxchf][thirdmaxchb]=thirdmaxb;
+	  }
+	}
+	
+    }else if(maxesequal==2){//the first two highest match, but the third doesn't
+      if((thirdmaxf-(thirdmaxb+fourthmaxb)<20)&&(thirdmaxf-(thirdmaxb+fourthmaxb)>-20)){
+	totaledepxy[thirdmaxchf][thirdmaxchb]=thirdmaxb;//basically do the same with the second max as I did with the max above
+	totaledepxy[thirdmaxchf][fourthmaxchb]=fourthmaxb;
+      }else if((thirdmaxb-(thirdmaxf+fourthmaxf)<20)&&(thirdmaxb-(thirdmaxf+fourthmaxf)>-20)){
+	totaledepxy[thirdmaxchf][thirdmaxchb]=thirdmaxf;//basically do the same with the second max as I did with the max above
+	totaledepxy[fourthmaxchf][thirdmaxchb]=fourthmaxf;
+	}else if(((thirdmaxf-fourthmaxb)-(thirdmaxb-fourthmaxf)<20)&&((thirdmaxf-fourthmaxb)-(thirdmaxb-fourthmaxf)>-20)){
+	totaledepxy[thirdmaxchf][fourthmaxchb]=fourthmaxb;
+	totaledepxy[fourthmaxchf][thirdmaxchb]=fourthmaxf;
+	totaledepxy[thirdmaxchf][thirdmaxchb]=thirdmaxb-fourthmaxf;
+      }
+    }//end comparing the energy maxes
+end of algorithmV1
+####################################################################################################################################
+copy of V1.1
+     int maxesequal=0;
+    //int maxesequal=5;//so that I can just compare the maxes and bypass the algorithm
+    int secondequal=0;
+    int thirdequal=0;
+    int testing=0;
+    double percent=0.05;//making a percentage that I can easily change
+    if((countf==1)&&(countb==1)){//start with mult one both way events-we know that the x and y must go together
+      totaledepxy[maxchf][maxchb]=totaledep_stripx[maxchf];
+      // cout<<maxb<<" front"<<maxf<<endl;
+    }
+    else{//if they're not both equal to one-if there's only two/1 etc, it should just keep the higher maxes at 0
+      if((abs(maxf-maxb)/maxf)<percent){
+	totaledepxy[maxchf][maxchb]=totaledep_stripx[maxchf]; //if the maxes are equal to each other
+	maxesequal=1;
+      }
+      //cout<<maxb<<" front"<<maxf<<endl;
+      //second max
+      //  if(countf>=2){
+	for(int x=1;x<17;x++){
+	  //int y=x-1;
+	  // if(totaledep_stripx[x]>20){
+	  // if(countf==1){
+	  //  hMult1x->Fill(totaledep_stripx[x]);
+	  // }else{
+	  //  hMultmanyx->Fill(totaledep_stripx[x]);
+	  // }
+	  // }
+	  //   if(countf==countb){
+	  //finding second max
+	  if((totaledep_stripx[x]>secondmaxf)&&(totaledep_stripx[x]<maxf)){
+	    secondmaxf=totaledep_stripx[x];
+	    secondmaxchf=x;
+	  }
+	  if((totaledep_stripy[x]>secondmaxb)&&(totaledep_stripy[x]<maxb)){
+	    secondmaxb=totaledep_stripy[x];
+	    secondmaxchb=x;
+	  }
+	  // }
+	}
+	//	cout<<secondmaxb<<" front"<<secondmaxf<<endl;
+	if(maxesequal==1){//only equate second maxes if first maxes were also equal
+	  if((abs(secondmaxf-secondmaxb)/secondmaxf)<percent){
+	    totaledepxy[secondmaxchf][secondmaxchb]=totaledep_stripx[secondmaxchf];
+	    maxesequal=2;//first and second maxes are both equal
+	  }
+	  
+	}else{
+	  if((abs(secondmaxf-secondmaxb)/secondmaxf)<percent){
+	    totaledepxy[secondmaxchf][secondmaxchb]=totaledep_stripx[secondmaxchf];
+	    secondequal=2;
+	  }
+	}
+	//if(countf==1) cout<<maxf<<" "<<secondmaxf<<" "<<secondmaxb<<endl;//to check that it keeps one 0 and will still increment the other if need be
+	//  }//end countf>2
+      //third max
+	//   if(countf>=3){
+	for(int x=1;x<17;x++){
+	  //  if(countf==countb){
+	  if((totaledep_stripx[x]>thirdmaxf)&&(totaledep_stripx[x]<secondmaxf)){
+	    thirdmaxf=totaledep_stripx[x];
+	    thirdmaxchf=x;
+	  }
+	  if((totaledep_stripy[x]>thirdmaxb)&&(totaledep_stripy[x]<secondmaxb)){
+	    thirdmaxb=totaledep_stripy[x];
+	    thirdmaxchb=x;
+	  }
+	  //  }
+	}
+	if(maxesequal==2){//only equate third if all others were equal before
+	  if((abs(thirdmaxf-thirdmaxb)/thirdmaxf)<percent){
+	    totaledepxy[thirdmaxchf][thirdmaxchb]=totaledep_stripx[thirdmaxchf];
+	    maxesequal=3;
+	  }
+	}else{//so if first max was unequal
+	  if((abs(thirdmaxf-thirdmaxb)/thirdmaxf)<percent){
+	    totaledepxy[thirdmaxchf][thirdmaxchb]=totaledep_stripx[thirdmaxchf];
+	    if(secondequal==2){
+	      secondequal=3;
+	    }else{
+	      thirdequal=3;
+	    }
+	  }
+	}
+	//  }//end countf>3
+      //fourth max
+    //  if(countf>=4){
+	for(int x=1;x<17;x++){
+	  // if(countf==countb){
+	  if((totaledep_stripx[x]>fourthmaxf)&&(totaledep_stripx[x]<thirdmaxf)){
+	    fourthmaxf=totaledep_stripx[x];
+	    fourthmaxchf=x;
+	  }
+	  if((totaledep_stripy[x]>fourthmaxb)&&(totaledep_stripy[x]<thirdmaxb)){
+	    fourthmaxb=totaledep_stripy[x];
+	    fourthmaxchb=x;
+	  }
+      // }
+	}
+	if(maxesequal==3){//only equate fourth if all others were equal first
+	  if((abs(fourthmaxf-fourthmaxb)/fourthmaxf)<percent){
+	    totaledepxy[fourthmaxchf][fourthmaxchb]=totaledep_stripx[fourthmaxchf];
+	    maxesequal=4;
+	  }
+	}
+	//  }//end countf>4
+    }//end else if countf and countb are not 1
+    // cout<<maxesequal<<endl;
+   
+    if(maxesequal==0){//none of the maxes match
+      if((abs((maxf-(secondmaxb+thirdmaxb+fourthmaxb))-(maxb-(secondmaxf+thirdmaxf+fourthmaxf)))/(maxf-(secondmaxb+thirdmaxb+fourthmaxb)))<percent){//end countb==1
+	totaledepxy[maxchf][maxchb]=maxb-(secondmaxf+thirdmaxf+fourthmaxf);
+	totaledepxy[maxchf][secondmaxchb]=secondmaxb;
+	totaledepxy[maxchf][thirdmaxchb]=thirdmaxb;
+	totaledepxy[maxchf][fourthmaxchb]=fourthmaxb;
+	totaledepxy[secondmaxchf][maxchb]=secondmaxf;
+	totaledepxy[thirdmaxchf][maxchb]=thirdmaxf;
+	totaledepxy[fourthmaxchf][maxchb]=fourthmaxf;
+      }else if(secondequal==2){//so the max channels don't equal, but the second maxes are
+	if((abs(maxf-(maxb+thirdmaxb+fourthmaxb))/maxf)<percent){
+	    totaledepxy[maxchf][maxchb]=maxb;
+	    totaledepxy[maxchf][thirdmaxchb]=thirdmaxb;
+	    totaledepxy[maxchf][fourthmaxchb]=fourthmaxb;
+	}
+	if((abs(maxb-(maxf+thirdmaxf+fourthmaxf))/maxb)<percent){
+	  totaledepxy[maxchf][maxchb]=maxf;
+	  totaledepxy[thirdmaxchf][maxchb]=thirdmaxf;
+	  totaledepxy[fourthmaxchf][maxchb]=fourthmaxf;
+	}
+
+      }else if(secondequal==3){//the max channels don't equal, but the third and second maxes do
+	if((abs(maxf-(fourthmaxb+maxb))/maxf)<percent){
+	  totaledepxy[maxchf][maxchb]=maxb;
+	  totaledepxy[maxchf][fourthmaxchb]=fourthmaxb;
+	}
+	if((abs(maxb-(maxf+fourthmaxf))/maxb)<percent){
+	  totaledepxy[maxchf][maxchb]=maxf;
+	  totaledepxy[fourthmaxchf][maxchb]=fourthmaxf;
+	}
+
+      }else if(thirdequal==3){//the max and second don't equal, but the third does
+	if((abs(maxf-(maxb+secondmaxb+fourthmaxb))/maxf)<percent){
+	    totaledepxy[maxchf][maxchb]=maxb;
+	    totaledepxy[maxchf][secondmaxchb]=secondmaxb;
+	    totaledepxy[maxchf][fourthmaxchb]=fourthmaxb;
+	}
+	if((abs(maxb-(maxf+secondmaxf+fourthmaxf))/maxb)<percent){
+	  totaledepxy[maxchf][maxchb]=maxf;
+	  totaledepxy[secondmaxchf][maxchb]=secondmaxf;
+	  totaledepxy[fourthmaxchf][maxchb]=fourthmaxf;
+	}
+      }else{
+	testing=1;
+      }
+      
+    }else if(maxesequal==1){//so the maximum energy channels match, but the seccond doesn't
+      // if(countf==2){
+      if((abs(secondmaxf-(secondmaxb+thirdmaxb+fourthmaxb))/secondmaxf)<percent){//all other events on back are on one line on the front
+	  totaledepxy[secondmaxchf][secondmaxchb]=secondmaxb;
+	  totaledepxy[secondmaxchf][thirdmaxchb]=thirdmaxb;//basically do the same with the second max as I did with the max above
+	  totaledepxy[secondmaxchf][fourthmaxchb]=fourthmaxb;
+      }else if((abs(secondmaxf-(thirdmaxb+fourthmaxb)/secondmaxf))<percent){
+	  totaledepxy[secondmaxchf][thirdmaxchb]=thirdmaxb;//basically do the same with the second max as I did with the max above
+	  totaledepxy[secondmaxchf][fourthmaxchb]=fourthmaxb;
+	  if((abs(secondmaxb-thirdmaxf)/secondmaxb)<percent){//if the second max on the back does not corropsond to the second max on the front, see if it goes with one of the others
+	    totaledepxy[thirdmaxchf][secondmaxchb]=secondmaxb;
+	  }else if((abs(secondmaxb-fourthmaxf)/secondmaxb)<percent){
+	    totaledepxy[fourthmaxchf][secondmaxchb]=secondmaxb;
+	  }else if((abs(secondmaxb-(thirdmaxf+fourthmaxf))/secondmaxb)<percent){//doesn't seem to be many cases of this
+	    totaledepxy[thirdmaxchf][secondmaxchb]=thirdmaxf;
+	    totaledepxy[fourthmaxchf][secondmaxchb]=fourthmaxf;
+	  }//end checking if the other side's 2nd max is equal to some smaller max on the front
+	  //case where the second max is separated from the 
+      }else if((abs(secondmaxb-(secondmaxf+thirdmaxf+fourthmaxf))/secondmaxb)<percent){//all other events on front are on one line with the back
+	  totaledepxy[secondmaxchf][secondmaxchb]=secondmaxf;
+	  totaledepxy[thirdmaxchf][secondmaxchb]=thirdmaxf;//basically do the same with the second max as I did with the max above
+	  totaledepxy[fourthmaxchf][secondmaxchb]=fourthmaxf;
+      }else if((abs(secondmaxb-(thirdmaxf+fourthmaxf))/secondmaxb)<percent){//all other events on front are on one line with the back
+	  totaledepxy[thirdmaxchf][secondmaxchb]=thirdmaxf;//basically do the same with the second max as I did with the max above
+	  totaledepxy[fourthmaxchf][secondmaxchb]=fourthmaxf;
+	  if((abs(secondmaxf-thirdmaxb)/secondmaxf)<percent){//if the second max on the back does not corropsond to the second max on the front, see if it goes with one of the others
+	    totaledepxy[secondmaxchf][thirdmaxchb]=secondmaxf;
+	    
+	  }else if((abs(secondmaxf-fourthmaxb)/secondmaxf)<percent){
+	    totaledepxy[secondmaxchf][fourthmaxchb]=secondmaxf;
+	  }else if((abs(secondmaxf-(thirdmaxb+fourthmaxb))/secondmaxf)<percent){//doesn't seem to be many cases of this
+	    totaledepxy[secondmaxchf][thirdmaxchb]=thirdmaxb;
+	    totaledepxy[secondmaxchf][fourthmaxchb]=fourthmaxb;
+	  }//end checking if the other side's 2nd max is equal to some smaller max on the back
+	  //end for case where other side's 2nd max is the same as a lesser max on the back
+      }else if((abs(secondmaxf-(secondmaxb+thirdmaxb))/secondmaxf)<percent){//there's a fourth max, but it's a separate event
+	  totaledepxy[secondmaxchf][secondmaxchb]=secondmaxb;
+	  totaledepxy[secondmaxchf][thirdmaxchb]=thirdmaxb;
+	  if((abs(fourthmaxb-thirdmaxf)/fourthmaxb)<percent){
+	    totaledepxy[thirdmaxchf][fourthmaxchb]=thirdmaxf;
+	  }
+      }else if((abs(secondmaxb-(secondmaxf+thirdmaxf))/secondmaxb)<percent){//all other events on front are on one line with the back
+	  totaledepxy[secondmaxchf][secondmaxchb]=secondmaxf;
+	  totaledepxy[thirdmaxchf][secondmaxchb]=thirdmaxf;
+	  if((abs(fourthmaxf-thirdmaxb)/fourthmaxf)<percent){
+	    totaledepxy[fourthmaxchf][thirdmaxchb]=thirdmaxb;
+	  }
+      }else if((abs(secondmaxf-(secondmaxb+fourthmaxb))/secondmaxf)<percent){//there's a fourth max, but it's a separate event
+	  totaledepxy[secondmaxchf][secondmaxchb]=secondmaxb;
+	  totaledepxy[secondmaxchf][fourthmaxchb]=fourthmaxb;
+	  if((abs(thirdmaxb-thirdmaxf)/thirdmaxb)<percent){
+	    totaledepxy[thirdmaxchf][thirdmaxchb]=thirdmaxf;
+	  }
+      }else if((abs(secondmaxb-(secondmaxf+fourthmaxf))/secondmaxb)<percent){//all other events on front are on one line with the back
+	  totaledepxy[secondmaxchf][secondmaxchb]=secondmaxf;
+	  totaledepxy[fourthmaxchf][secondmaxchb]=fourthmaxf;
+	  if((abs(thirdmaxf-thirdmaxb)/thirdmaxf)<percent){
+	    totaledepxy[thirdmaxchf][thirdmaxchb]=thirdmaxb;
+	  }
+	}else{
+	  testing=1;
+	}
+	
+    }else if(maxesequal==2){//the first two highest match, but the third doesn't
+      if((abs(thirdmaxf-(thirdmaxb+fourthmaxb))/thirdmaxf)<percent){
+	totaledepxy[thirdmaxchf][thirdmaxchb]=thirdmaxb;//basically do the same with the second max as I did with the max above
+	totaledepxy[thirdmaxchf][fourthmaxchb]=fourthmaxb;
+      }else if((abs(thirdmaxb-(thirdmaxf+fourthmaxf))/thirdmaxb)<percent){
+	totaledepxy[thirdmaxchf][thirdmaxchb]=thirdmaxf;//basically do the same with the second max as I did with the max above
+	totaledepxy[fourthmaxchf][thirdmaxchb]=fourthmaxf;
+      }else if((abs((thirdmaxf-fourthmaxb)-(thirdmaxb-fourthmaxf))/(thirdmaxf-fourthmaxb))<percent){
+	totaledepxy[thirdmaxchf][fourthmaxchb]=fourthmaxb;
+	totaledepxy[fourthmaxchf][thirdmaxchb]=fourthmaxf;
+	totaledepxy[thirdmaxchf][thirdmaxchb]=thirdmaxb-fourthmaxf;
+      }else{
+	testing=1;
+      }
+    }else{//end comparing the energy maxes
+      testing=1;
+    }
+      // cout<<"here"<<endl;
+      //trying to figure out what things are in the events I'm not IDing
+    if(testing==1){//because I think 3 and 4 being one or both equal is covered-there aren't any other ways they can be arranged
+	//	cout<<"here2"<<endl;
+      if(maxf>10) hGeDSSD->Fill(maxf);
+      if(secondmaxf>10)	hGeDSSD->Fill(secondmaxf);
+      if(thirdmaxf>10) hGeDSSD->Fill(thirdmaxf);
+      if(fourthmaxf>10)	hGeDSSD->Fill(fourthmaxf);
+	for(int type=0;type<2;type++){
+	  if(type==0){
+	    if(maxf>1) helectronx->Fill(totaledepx[type][maxchf]);
+	    if(secondmaxf>1) helectronx->Fill(totaledepx[type][secondmaxchf]);
+	    if(thirdmaxf>1) helectronx->Fill(totaledepx[type][thirdmaxchf]);
+	    if(fourthmaxf>1) helectronx->Fill(totaledepx[type][fourthmaxchf]);
+	    if(maxb>1) helectrony->Fill(totaledepy[type][maxchb]);
+	    if(secondmaxb>1) helectrony->Fill(totaledepy[type][secondmaxchb]);
+	    if(thirdmaxb>1) helectrony->Fill(totaledepy[type][thirdmaxchb]);
+	    if(fourthmaxb>1) helectrony->Fill(totaledepy[type][fourthmaxchb]);
+	  }
+	  if(type==1){
+	    if(maxf>1) hnotelectronx->Fill(totaledepx[type][maxchf]);
+	    if(secondmaxf>1) hnotelectronx->Fill(totaledepx[type][secondmaxchf]);
+	    if(thirdmaxf>1) hnotelectronx->Fill(totaledepx[type][thirdmaxchf]);
+	    if(fourthmaxf>1) hnotelectronx->Fill(totaledepx[type][fourthmaxchf]);
+	    if(maxb>1) hnotelectrony->Fill(totaledepy[type][maxchb]);
+	    if(secondmaxb>1) hnotelectrony->Fill(totaledepy[type][secondmaxchb]);
+	    if(thirdmaxb>1) hnotelectrony->Fill(totaledepy[type][thirdmaxchb]);
+	    if(fourthmaxb>1) hnotelectrony->Fill(totaledepy[type][fourthmaxchb]);
+	  }
+	}
+    }
+####################################################################################################################################

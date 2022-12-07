@@ -1,0 +1,48 @@
+
+
+
+###############################################################################
+#                                                                         #
+# THIS TEST GENERATES NUCLEI OF F-24 AT THE CENTRE OF THE TARGET 
+# WHICH IS THE ORIGIN. 
+#  
+################################################################################
+
+#filename
+
+/gedssd_bc/analysis/filename radioactivedecay
+
+#Physics lists
+
+/gedssd_bc/phys/SelectPhysics LowEnergy_EM_Livermore
+
+#Pick the detectors to visualize
+
+#
+/gedssd_bc/det/UseSega true
+/gedssd_bc/det/UseLaBr3 true
+/gedssd_bc/det/UseLaBr3Frame true
+/gedssd_bc/det/UseEJ204Scint true
+/gedssd_bc/det/UseSiDSSD true
+/gedssd_bc/det/UsePSPMT true
+/gedssd_bc/det/UsePipe true
+
+#initialize
+
+/run/initialize
+/grdm/allVolumes
+
+#source
+
+/gps/position 0.0 0.0 0.0 cm
+/gps/particle ion
+/gps/energy 0 keV
+/gps/ion 31 80 0 0
+/grdm/nucleusLimits 80 80 31 31
+
+#/gps/ang/type iso
+
+
+#/vis/scene/endOfRunAction refresh
+/run/beamOn 100000
+
