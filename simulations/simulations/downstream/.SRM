@@ -1,0 +1,24 @@
+2
+3141	
+1738
+1988	9	1	12	0
+9
+123.1	0	34600	0.8	0
+247.7	0	5864	0.6	0
+591.8	0	4197	0.6	0
+723.3	0	17030	0.6	0
+873.2	0	10340	0.7	0
+996.3	0	8850	0.9	0
+1004.7	0	15340	0.7	0
+1274.5	0	29580	0.5	0
+1596.4	0	1503	0.7	0
+
+
+Number of Components
+Half Life (Days)	
+Date (Year  Month  Day  Hour (remember to count from 0))
+Number of Lines	
+Energy	  Energy Unc. Intensity (cps) Intensity Unc. (%) Component
+
+If a line comes from several components just add it once for each component
+The program will fix it. 

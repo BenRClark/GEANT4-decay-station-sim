@@ -1,0 +1,1521 @@
+#include <iostream>
+#include <array>
+#include "Riostream.h"
+#include "TFile.h"
+#include "TF1.h"
+#include "TH1.h"
+#include "TCanvas.h"
+#include <fstream>
+#include "TGraph.h"
+#include "TGraphErrors.h"
+#include <math.h>
+#include "TMultiGraph.h"
+
+
+
+//function for discriminating between experimental and simulated energy lists. Simulation needs more energies analyzed for use in summing corrections, but only want to compare with energies that are analyzed in experimental results. To change which ones are compared, add of remove indices as necessary. In this function, the "i" index refers to the simulated energies array Energy[i], so we are ignoring Energy[4], Energy[6], and so on.
+
+//Credit to Lee Ward for this function idea 05/13/2021-DCS
+bool is_exp_energy(int i){
+  if(i == 4 || i == 6 || i == 7 || i == 9 || i == 10 || i == 12 || i == 13 || i == 14 || i == 15 || i == 16 || i == 17 || i == 19 || i == 21 || i == 22 || i == 25 || i == 26){
+    return false;
+  }
+  else{
+    return true;
+  }
+}
+
+//these are the crystals that are directly in the beamline and not included in sim. For some reason it still includes them in the results files, so they need to be ignored to avoid dividing by zero
+bool is_sim_crystal(int j){
+  if(j == 0 || j == 1 || j == 2 || j == 3 || j == 16 || j == 17 || j == 18 || j == 19){
+    return false;
+  }
+  else{
+    return true;
+  }
+}
+
+
+
+
+//main function
+
+void analysis_comparison_brc339(){
+
+  //expected energies = {42.8,86.5,105.3,123.1,247,591,723,873,996,1004,1274,1596}
+  static const int numE = 12;
+  static const int simnumE = 29;
+  static const int numcrystals = 64;
+  static const int simnumcrystals = 72;
+  static const int numdets = 16;
+
+  //---------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
+  //----------Beginning of experimental analysis-------------------------------
+  //---------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
+  
+  Double_t energy, chan, dchan, cts, dcts, eff, deff;
+  Double_t dum1, dum2, dum3, dum4;
+  ifstream infile;
+
+
+
+  //declaring 2D vectors to store efficiency and efficiency error information
+
+  Double_t Efficiency[12][64];
+  Double_t Efficiency_Err[12][64];
+
+  //setting initial values to zero since a few crystals are missing
+  for(int i = 0; i < 12; i++){
+    for(int j = 0; j < 64; j++){
+      Efficiency[i][j] = 0;
+      Efficiency_Err[i][j] = 0;
+    }
+  }
+
+
+  //looping through results files and crystal numbers
+  //need to path directly to clover results files
+
+  for(int i = 0; i < numcrystals; i++){
+
+    infile.open(Form("e18016fits_run_1142_new/Clover_%i_Results.txt",i));
+
+    if(!infile.is_open()) {
+      cout << "File " << Form("e18016fits_run_1142_new/Clover_%i_Results.txt",i) << " could not be opened, moving on....\n" ;
+    } else {
+      // Skip first two lines of calibration pars
+      int counter = 0;
+      infile.ignore(2000,'\n');
+      infile.ignore(2000,'\n');
+     
+	// Reset
+	energy = chan = dchan = cts = dcts = eff = deff = 0;
+
+	// Read in data to create master array of efficiencies and efficiency errors
+
+	while(!infile.eof()) {
+
+	  //cout << energy << " " << chan << " "  << dchan << " " << cts << " " << dcts << " " << eff << " " << deff << endl;
+
+	  infile >> energy >> chan >> dchan >> cts >> dcts >> eff >> deff;
+
+	  if(energy == 42.8){
+	    Efficiency[0][i] = eff;
+	    Efficiency_Err[0][i] = deff;
+	  }
+	  if(energy == 86.5){
+	    Efficiency[1][i] = eff;
+	    Efficiency_Err[1][i] = deff;
+	  }
+	  if(energy == 105.3){
+	    Efficiency[2][i] = eff;
+	    Efficiency_Err[2][i] = deff;
+	  }
+	  if(energy == 123.1){
+	    Efficiency[3][i] = eff;
+	    Efficiency_Err[3][i] = deff;
+	  }
+	  if(energy == 247.7){
+	    Efficiency[4][i] = eff;;
+	    Efficiency_Err[4][i] = deff;
+	  }
+	  if(energy == 591.8){
+	    Efficiency[5][i] = eff;
+	    Efficiency_Err[5][i] = deff;
+	  }
+	  if(energy == 723.3){
+	    Efficiency[6][i] = eff;
+	    Efficiency_Err[6][i] = deff;
+	  }
+	  if(energy == 873.2){
+	    Efficiency[7][i] = eff;
+	    Efficiency_Err[7][i] = deff;
+	  }
+	  if(energy == 996.3){
+	    Efficiency[8][i] = eff;
+	    Efficiency_Err[8][i] = deff;
+	  }
+	  if(energy == 1004.7){
+	    Efficiency[9][i] = eff;
+	    Efficiency_Err[9][i] = deff;
+	  }
+	  if(energy == 1274.5){
+	    Efficiency[10][i] = eff;
+	    Efficiency_Err[10][i] = deff;
+	  }
+	  if(energy == 1596.4){
+	    Efficiency[11][i] = eff;
+	    Efficiency_Err[11][i] = deff;
+	  }
+	  if(infile.eof()){
+	    infile.close();
+	  }
+	}
+    }
+  }  
+
+
+  //defining crystal regions for experiment (simulation crystal numbers are different)
+  vector<int> downcrystals = {48,49,50,51,52,53,54,55,56,57,58,60,61,62,63};
+  vector<int> upcrystals = {0,1,2,3,4,6,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,39,40,41,42,43,44,45,46,47};
+  vector<int> abovecrystals = {4,6,24,25,26,27,28,29,30,31,32,33,34,35,52,53,54,55};
+  vector<int> belowcrystals = {12,13,14,15,16,17,18,19,40,41,42,43,44,45,46,47,60,61,62,63};
+  vector<int> rightcrystals = {0,1,2,3,16,17,18,19,20,21,22,23,24,25,26,27,48,49,50,51};
+  vector<int> leftcrystals = {8,10,11,28,29,30,31,32,33,34,35,36,37,39,56,57,58};
+
+ 
+
+  int Energy[simnumE];  
+
+  Energy[0] = 43;  //in keV
+  Energy[1] = 87; //in keV
+  Energy[2] = 105; //in keV
+  Energy[3] = 123; //in keV
+  Energy[4] = 176; //in keV. not in e17011 experimental results 
+  Energy[5] = 247; //in keV
+  Energy[6] = 428; //in keV. not in e17011 experimental results 
+  Energy[7] = 444; //in keV. not in e17011 experimental results
+  Energy[8] = 463; //in keV. not in e17011 experimental results 
+  Energy[9] = 478; //in keV. not in e17011 experimental results
+  Energy[10] = 582; //in keV. not in e17011 experimental results
+  Energy[11] = 591; //in keV
+  Energy[12] = 601; //in keV. not in e17011 experimental results
+  Energy[13] = 612; //in keV. not in e17011 experimental results
+  Energy[14] = 625; //in keV. not in e17011 experimental results
+  Energy[15] = 636; //in keV. not in e17011 experimental results 
+  Energy[16] = 677; //in keV. not in e17011 experimental results
+  Energy[17] = 692; //in keV. not in e17011 experimental results
+  Energy[18] = 723;  //in keV
+  Energy[19] = 757; //in keV. not in e17011 experimental results
+  Energy[20] = 873; //in keV
+  Energy[21] = 893; //in keV. not in e17011 experimental results
+  Energy[22] = 904; //in keV. not in e17011 experimental results
+  Energy[23] = 996; //in keV
+  Energy[24] = 1004; //in keV
+  Energy[25] = 1119; //in keV. not in e17011 experimental results
+  Energy[26] = 1246; //in keV. not in e17011 experimental results
+  Energy[27] = 1274; //in keV
+  Energy[28] = 1596; //in keV
+
+
+
+  //Number of Gammas in Simulation
+
+  //was originally 10000000
+  double nGamma = 10000000;
+
+  // Efficiencies [Energy][Det Number]
+
+  //different vectors explained:
+  //Peak_Efficiency_crystal_origin[][] is the original, unaltered vector
+  //Peak_Efficiency_crystal_short[][] is the vector with the crystals in the beamline removed
+  //Peak_Efficiency_crystal[][] is the short vector which is aligned to the indices of the experimental vector
+  //the same scheme applies to the total efficiency vectors as well
+
+  double Peak_Efficiency[simnumE][numdets] = {};
+  double Peak_Efficiency_Err[simnumE][numdets] = {};
+
+  double Peak_Efficiency_crystal_origin[simnumE][simnumcrystals] = {};
+  double Peak_Efficiency_Err_crystal_origin[simnumE][numcrystals] = {};
+  
+  double Total_Efficiency[simnumE][numdets] = {};
+  double Total_Efficiency_Err[simnumE][numdets] = {};
+
+  double Total_Efficiency_crystal_origin[simnumE][simnumcrystals] = {};
+  double Total_Efficiency_Err_crystal_origin[simnumE][numcrystals] = {};
+
+  //FIles
+  TFile *f1t[simnumE];
+  
+  for(int i=0; i<simnumE; i++) {
+    //change this file path to data drive once simulated root files are moved over there. -DCS 05/20/2021
+    f1t[i] = new TFile(Form("/data/e18016/simulations/analysis/simrootfiles/%dkeVtest_brc339_0.root",Energy[i]));
+  }
+
+  //Fits & Histos
+  TF1 *fClover[simnumE][numdets] = {};
+  TH1D *hClover[simnumE][numdets];
+  TH1D *hClover_crystal[simnumE][simnumcrystals];
+  TF1 *fClover_crystal[simnumE][simnumcrystals] = {};
+
+  
+  for(int i=0; i<simnumE; i++) {
+    for(int j=0; j<numdets; j++) {
+    hClover[i][j] = (TH1D*) f1t[i]->Get(Form("hEnergyDepositClover_addback_%d",j));
+     
+      if(Energy[i]<87) {
+  	fClover[i][j] = new TF1(Form("f%dkev_%d",Energy[i],j),"gaus",0.80*Energy[i],0.95*Energy[i]);
+      }
+      else if(Energy[i]<100) {
+  	fClover[i][j] = new TF1(Form("f%dkev_%d",Energy[i],j),"gaus",0.95*Energy[i],1.10*Energy[i]);
+      }
+      else if(Energy[i]<200) {
+  	fClover[i][j] = new TF1(Form("f%dkev_%d",Energy[i],j),"gaus",0.95*Energy[i],1.05*Energy[i]);
+      }
+      else {
+  	fClover[i][j] = new TF1(Form("f%dkev_%d",Energy[i],j),"gaus",0.98*Energy[i],1.02*Energy[i]);
+      }
+    }
+  }
+  
+
+  for(int i=0; i<simnumE; i++) {
+    for(int j=0; j<simnumcrystals; j++) {
+      hClover_crystal[i][j] = (TH1D*) f1t[i]->Get(Form("hEnergyDepositClover_%d",j));
+      
+      if(Energy[i]<100) {
+	fClover_crystal[i][j] = new TF1(Form("fc_%dkev_%d",Energy[i],j),"gaus",0.95*Energy[i],1.05*Energy[i]);
+      }
+      else if(Energy[i]<200) {
+	fClover_crystal[i][j] = new TF1(Form("fc%dkev_%d",Energy[i],j),"gaus",0.95*Energy[i],1.05*Energy[i]);
+      }
+      else {
+	fClover_crystal[i][j] = new TF1(Form("fc%dkev_%d",Energy[i],j),"gaus",0.98*Energy[i],1.02*Energy[i]);
+      }
+    }
+  }
+  
+
+
+  //output root file
+  //move this to data drive whenever given permission DCS 05/20/2021
+  TFile *fout = new TFile("/data/e18016/simulations/analysis/comparison/test_brc339.root","RECREATE");
+
+
+  //fitting whole detectors
+  for(int i=0; i<simnumE; i++) {
+    for(int j=0; j<numdets; j++) {
+
+   
+      hClover[i][j]->GetXaxis()->SetRangeUser(0.9*Energy[i],1.10*Energy[i]);
+      hClover[i][j]->Draw();
+    
+      fClover[i][j]->SetParLimits(0,1,1000000);
+      fClover[i][j]->SetParameter(0,100);
+      fClover[i][j]->SetParLimits(1,0.98*Energy[i],1.02*Energy[i]);
+      fClover[i][j]->SetParameter(1,Energy[i]);   
+      fClover[i][j]->SetParLimits(2,0,5);
+      fClover[i][j]->SetParameter(2,5);
+      
+      hClover[i][j]->Fit(fClover[i][j],"RQ");
+      
+      fClover[i][j]->SetParLimits(0,1,1000000);
+      fClover[i][j]->SetParLimits(1,0.98*Energy[i],1.02*Energy[i]);
+      fClover[i][j]->SetParLimits(2,0,5);
+      
+      hClover[i][j]->Fit(fClover[i][j],"RQ");
+      
+      fClover[i][j]->SetParLimits(0,1,1000000);
+      fClover[i][j]->SetParLimits(1,0.98*Energy[i],1.02*Energy[i]);
+      fClover[i][j]->SetParLimits(2,0,5);
+      
+      hClover[i][j]->Fit(fClover[i][j],"RQ");
+      
+      fClover[i][j]->SetParLimits(0,1,1000000);
+      fClover[i][j]->SetParLimits(1,0.98*Energy[i],1.02*Energy[i]);
+      fClover[i][j]->SetParLimits(2,0,5);
+      
+      hClover[i][j]->Fit(fClover[i][j],"RQ+");
+
+      double area = 2.506628*(fClover[i][j]->GetParameter(0))*(fClover[i][j]->GetParameter(2));
+      double area_err = area*pow((pow((fClover[i][j]->GetParError(0)/fClover[i][j]->GetParameter(0)),2)+pow((fClover[i][j]->GetParError(2)/fClover[i][j]->GetParameter(2)),2)),0.5);
+      double eff = 100.0*area/(1.0*nGamma);
+      double eff_err = 100.0*area_err/(1.0*nGamma);
+
+      double total_eff = 0;
+      for(int k=2; k<Energy[i]*1.10; k++) {
+  	total_eff += hClover[i][j]->GetBinContent(k);
+      }
+      double total_eff_err = pow(total_eff,0.5)/(1.0*nGamma);
+      total_eff = total_eff/(1.0*nGamma);
+      
+
+      //cout<<i<<"  "<<j<<"  "<<eff<<" +/- "<<eff_err<<"  "<<100*total_eff<<" +/- "<<100*total_eff_err<<endl;
+
+  //     Efficiencies [Energy][Det Number]
+      // if(j>=8 && (Energy[i]==42 || Energy[i] == 86 || Energy[i] ==105)) {
+      // if(j<0){
+      // cout << "Special Condition" << endl;
+      // // if(j == 0 || j == 4){
+      // // 	cout<<"Clover Missing"<<endl;
+      // 	Peak_Efficiency[i][j] = 0;
+      // 	Peak_Efficiency_Err[i][j] = 0;
+	
+      // 	Total_Efficiency[i][j] = 0;
+      // 	Total_Efficiency_Err[i][j] = 0;
+	
+      // }
+      // else {
+  	Peak_Efficiency[i][j] = eff;
+  	Peak_Efficiency_Err[i][j] = eff_err;
+	
+  	Total_Efficiency[i][j] = total_eff;
+  	Total_Efficiency_Err[i][j] = total_eff_err;
+	
+	// }
+
+	
+    }
+  }
+
+  int counter3 = 0;
+  //cout << "here 1" << endl;
+
+  //fitting individual crystals
+  for(int i=0; i<simnumE; i++) {
+    for(int j=0; j<simnumcrystals; j++) {
+
+      hClover_crystal[i][j]->GetXaxis()->SetRangeUser(0.9*Energy[i],1.10*Energy[i]);
+
+      fClover_crystal[i][j]->SetParLimits(0,1,1000000);
+      fClover_crystal[i][j]->SetParameter(0,100);
+      fClover_crystal[i][j]->SetParLimits(1,0.98*Energy[i],1.02*Energy[i]);
+      fClover_crystal[i][j]->SetParameter(1,Energy[i]);   
+      fClover_crystal[i][j]->SetParLimits(2,0,5);
+      fClover_crystal[i][j]->SetParameter(2,5);
+
+      hClover_crystal[i][j]->Fit(fClover_crystal[i][j],"RQ");
+      
+      fClover_crystal[i][j]->SetParLimits(0,1,1000000);
+      fClover_crystal[i][j]->SetParLimits(1,0.98*Energy[i],1.02*Energy[i]);
+      fClover_crystal[i][j]->SetParLimits(2,0,5);
+      
+      hClover_crystal[i][j]->Fit(fClover_crystal[i][j],"RQ");
+      
+      fClover_crystal[i][j]->SetParLimits(0,1,1000000);
+      fClover_crystal[i][j]->SetParLimits(1,0.98*Energy[i],1.02*Energy[i]);
+      fClover_crystal[i][j]->SetParLimits(2,0,5);
+      
+      hClover_crystal[i][j]->Fit(fClover_crystal[i][j],"RQ");
+      
+      fClover_crystal[i][j]->SetParLimits(0,1,1000000);
+      fClover_crystal[i][j]->SetParLimits(1,0.98*Energy[i],1.02*Energy[i]);
+      fClover_crystal[i][j]->SetParLimits(2,0,5);
+      
+      hClover_crystal[i][j]->Fit(fClover_crystal[i][j],"RQ+");
+    
+      double area = 2.506628*(fClover_crystal[i][j]->GetParameter(0))*(fClover_crystal[i][j]->GetParameter(2));
+      double area_err = area*pow((pow((fClover_crystal[i][j]->GetParError(0)/fClover_crystal[i][j]->GetParameter(0)),2)+pow((fClover_crystal[i][j]->GetParError(2)/fClover_crystal[i][j]->GetParameter(2)),2)),0.5);
+      double eff = 100.0*area/(1.0*nGamma);
+      double eff_err = 100.0*area_err/(1.0*nGamma);
+
+      double total_eff = 0;
+      for(int k=2; k<Energy[i]*1.10; k++) {
+	total_eff += hClover_crystal[i][j]->GetBinContent(k);
+      }
+      double total_eff_err = pow(total_eff,0.5)/(1.0*nGamma);
+      total_eff = total_eff/(1.0*nGamma);
+
+      
+      //cout<<i<<"  "<<j<<"  "<<eff<<" +/- "<<eff_err<<"  "<<100*total_eff<<" +/- "<<100*total_eff_err<<endl;
+      //cout << i << "  " << j << "  " << area << "  " << total_eff*1.0*nGamma << endl;
+
+      // Efficiencies [Energy][Det Number]
+
+
+      Peak_Efficiency_crystal_origin[i][j] = eff;
+      Peak_Efficiency_Err_crystal_origin[i][j] = eff_err;
+      
+      Total_Efficiency_crystal_origin[i][j] = total_eff;
+      Total_Efficiency_Err_crystal_origin[i][j] = total_eff_err;
+
+      hClover[i][j]->Write();
+      
+    }
+  }
+
+
+  //writing simulated data to output text file
+  //need to path this to data drive later
+  ofstream data;
+  data.open("Sim_Eff.txt");
+  
+  for(int j=0; j<numdets; j++) {
+    data<<"Clover"<<j<<"\n";
+    for(int i=0; i<numE; i++) {
+      data<<Peak_Efficiency[i][j]<<"  "<< Peak_Efficiency_Err[i][j]<<"  "<<Total_Efficiency[i][j]<<"  "<<Total_Efficiency_Err[i][j]<<"\n";	  
+    }
+    data<<"\n";	
+  }
+  for(int j=0; j<numcrystals;j++){
+    data<<"Crystal"<<j<<"\n";
+    for(int i=0; i<numE; i++) {
+      data<<Peak_Efficiency_crystal_origin[i][j]<<"  "<< Peak_Efficiency_Err_crystal_origin[i][j]<<"  "<<Total_Efficiency_crystal_origin[i][j]<<"  "<<Total_Efficiency_Err_crystal_origin[i][j]<<"\n";	  
+    }
+    data<<"\n";	
+  }
+
+  //truncating original arrays to remove bins with 0 counts (for some reason the simulation generates histograms for crystals in the beamline that dont actually exist.)
+
+  Double_t Peak_Efficiency_crystal_short[simnumE][numcrystals] = {};
+  Double_t Total_Efficiency_crystal_short[simnumE][numcrystals] = {};
+  Double_t Peak_Efficiency_Err_crystal_short[simnumE][numcrystals] = {};
+  Double_t Total_Efficiency_Err_crystal_short[simnumE][numcrystals] = {};
+
+  for(int i = 0; i < simnumE; i++){
+    int counter1 = 0;
+    for(int j = 0; j < simnumcrystals; j++){
+      if(is_sim_crystal(j)){
+	Peak_Efficiency_crystal_short[i][counter1] = Peak_Efficiency_crystal_origin[i][j];
+	Peak_Efficiency_Err_crystal_short[i][counter1] = Peak_Efficiency_Err_crystal_origin[i][j];
+	Total_Efficiency_crystal_short[i][counter1] = Total_Efficiency_crystal_origin[i][j];
+	Total_Efficiency_Err_crystal_short[i][counter1] = Total_Efficiency_Err_crystal_origin[i][j];
+	counter1++;
+      }
+    }
+  }
+
+
+
+  Double_t sum_eff_Full[simnumE] = {};
+  Double_t sum_eff_err_Full[simnumE]= {};
+  Double_t sum_eff_crystal_Full[simnumE] = {};
+  Double_t sum_eff_crystal_err_Full[simnumE] = {};
+  Double_t err_temp1[simnumE] = {};
+  Double_t err_temp2[simnumE] = {};
+
+  //summing sim efficiencies for each energy and storing in array so we can plot later
+
+  for(int j = 0; j < numdets; j++){
+    for(int i = 0; i < simnumE; i++){
+  	sum_eff_Full[i] += Peak_Efficiency[i][j];
+  	err_temp1[i] += pow(Peak_Efficiency_Err[i][j],2);
+    }
+  }
+
+
+  for(int j = 0; j < numcrystals; j++){
+    for(int i = 0; i < simnumE; i++){
+	sum_eff_crystal_Full[i] += Peak_Efficiency_crystal_origin[i][j];
+	err_temp2[i] += pow(Peak_Efficiency_Err_crystal_origin[i][j],2);
+    }
+  }
+
+
+  for(int i = 0; i < numE; i++){
+    //seting 43keV error to 0 for now
+    // if(i<=1){
+    //   //sum_eff_err_Full[i] = 0;
+    //   sum_eff_crystal_err_Full[i] = 0;
+    // }
+    // else{
+      //sum_eff_err_Full[i] = err_temp1[i]*sqrt(err_temp1[i]);
+      sum_eff_crystal_err_Full[i] = err_temp2[i]*sqrt(err_temp2[i]);
+      //}
+  }
+  //cout << sum_eff_crystal_err[i] << endl;
+
+  //declaring crystal number vectors for regions of interest in the simulation
+  //crystals that were missing from experiment were also excluded from these regions
+  //vector<int> simupcrystals = {8,9,11,12,14,15,32,34,4,7,28,29,30,31,48,49,50,51,52,53,54,55,16,17,18,19,56,57,58,59,40,41,42,43,60,61,62,63};
+  vector<int> simupcrystals = {40,42,12,14,15,20,21,22,23,44,45,36,47,8,9,11,36,37,38,39,48,49,50,51,24,25,26,27,60,61,62,63,56,57,58,59,64,65,66,67,68,69,70,71};
+  // vector<int> simdowncrystals = {0,1,2,8,10,11,20,21,22,23,24,25,26,27};
+  vector<int> simdowncrystals = {4,5,6,28,29,30,31,32,33,34,35,52,53,54,55};
+  vector<int> simleftcrystals = {12,14,15,36,37,38,39,56,57,58,59,8,9,11,4,5,6};
+  vector<int> simrightcrystals = {20,21,22,23,64,65,66,67,24,25,26,27,60,61,62,63,28,29,30,31};
+  vector<int> simabovecrystals = {40,42,60,61,62,63,36,37,38,39,56,57,58,59,32,33,34,35};
+  vector<int> simbelowcrystals = {44,45,46,47,64,65,66,67,68,69,70,71,48,49,50,51,52,53,54,55};
+
+  double sim_crystal1[simnumE] = {};
+  double sim_crystal2[simnumE] = {};
+  double sim_crystal3[simnumE] = {};
+  double sim_crystal17[simnumE] = {};
+  double sim_crystal5[simnumE] = {};
+  double sim_crystal6[simnumE] = {};
+  double sim_crystal7[simnumE] = {};
+  double sim_crystal8[simnumE] = {};
+  double sim_crystal9[simnumE] = {};
+  double sim_crystal10[simnumE] = {};
+  double sim_crystal11[simnumE] = {};
+  double sim_crystal12[simnumE] = {};
+  double sim_crystal13[simnumE] = {};
+  double sim_crystal14[simnumE] = {};
+  double sim_crystal15[simnumE] = {};
+  double sim_crystal16[simnumE] = {};
+
+
+
+
+
+ for(int i = 0; i < simnumcrystals; i++){
+    //looping through energies
+    for(int j = 0; j < simnumE; j++){
+      //cout << "Efficiency[" << j << "][" << i << "]: " << Efficiency[j][i] << endl;
+      //checking to see if the crystal is downstream
+
+      if(i >= 4 && i <= 7 /* && i != 7 */) {
+	sim_crystal1[j] += Peak_Efficiency_crystal_origin[j][i];
+      } 
+      if(i >= 8 && i <= 11 /* && i != 10 */) {
+	sim_crystal2[j] += Peak_Efficiency_crystal_origin[j][i];;
+      } 
+      if(i >= 12 && i <= 15 /* && i != 13 */) {
+	sim_crystal3[j] += Peak_Efficiency_crystal_origin[j][i];;
+      } 
+      if(i >= 20 && i <= 23) {
+	sim_crystal5[j] += Peak_Efficiency_crystal_origin[j][i];;
+      } 
+      if(i >= 24 && i <= 27) {
+	sim_crystal6[j] += Peak_Efficiency_crystal_origin[j][i];;
+      } 
+      if(i >= 28 && i <= 31) {
+	sim_crystal7[j] += Peak_Efficiency_crystal_origin[j][i];;
+      } 
+      if(i >= 32 && i <= 35) {
+	sim_crystal8[j] += Peak_Efficiency_crystal_origin[j][i];;
+      } 
+      if(i >= 36 && i <= 39) {
+	sim_crystal9[j] += Peak_Efficiency_crystal_origin[j][i];;
+      } 
+      if(i >= 40 && i <= 43 /* && i != 41 && i != 43 */) {
+	sim_crystal10[j] += Peak_Efficiency_crystal_origin[j][i];;
+      } 
+      if(i >= 44 && i <= 47) {
+	sim_crystal11[j] += Peak_Efficiency_crystal_origin[j][i];;
+      } 
+      if(i >= 48 && i <= 51) {
+	sim_crystal12[j] += Peak_Efficiency_crystal_origin[j][i];;
+      } 
+      if(i >= 52 && i <= 55) {
+	sim_crystal13[j] += Peak_Efficiency_crystal_origin[j][i];;
+      } 
+      if(i >= 56 && i <= 59) {
+	sim_crystal14[j] += Peak_Efficiency_crystal_origin[j][i];;
+      } 
+      if(i >= 60 && i <= 63) {
+	sim_crystal15[j] += Peak_Efficiency_crystal_origin[j][i];;
+      } 
+       if(i >= 64 && i <= 67) {
+	sim_crystal16[j] += Peak_Efficiency_crystal_origin[j][i];;
+      }
+        if(i >= 68 && i <= 71) {
+	sim_crystal17[j] += Peak_Efficiency_crystal_origin[j][i];;
+      } 
+       
+    }
+
+  }
+
+  Double_t sim_crystal1_trunc[numE] = {};
+  Double_t sim_crystal2_trunc[numE] = {};
+  Double_t sim_crystal3_trunc[numE] = {};
+  Double_t sim_crystal17_trunc[numE] = {};
+  Double_t sim_crystal5_trunc[numE] = {};
+  Double_t sim_crystal6_trunc[numE] = {};
+  Double_t sim_crystal7_trunc[numE] = {};
+  Double_t sim_crystal8_trunc[numE] = {};
+  Double_t sim_crystal9_trunc[numE] = {};
+  Double_t sim_crystal10_trunc[numE] = {};
+  Double_t sim_crystal11_trunc[numE] = {};
+  Double_t sim_crystal12_trunc[numE] = {};
+  Double_t sim_crystal13_trunc[numE] = {};
+  Double_t sim_crystal14_trunc[numE] = {};
+  Double_t sim_crystal15_trunc[numE] = {};
+  Double_t sim_crystal16_trunc[numE] = {};
+  
+
+  int counter = 0;
+  
+
+  //truncating efficiency arrays to include only energies we care about for comparison purposes. In sim there are 29 energies. We only want to compare with the 12 we have for experiment. The is_exp_energy function defined at the beginning of this code takes care of this
+  for(int j = 0; j < simnumE; j++){
+    if(is_exp_energy(j)){
+
+      sim_crystal1_trunc[counter] = sim_crystal1[j];
+      sim_crystal2_trunc[counter] = sim_crystal2[j];
+      sim_crystal3_trunc[counter] = sim_crystal3[j];
+      sim_crystal17_trunc[counter] = sim_crystal17[j];
+      sim_crystal5_trunc[counter] = sim_crystal5[j];
+      sim_crystal6_trunc[counter] = sim_crystal6[j];
+      sim_crystal7_trunc[counter] = sim_crystal7[j];
+      sim_crystal8_trunc[counter] = sim_crystal8[j];
+      sim_crystal9_trunc[counter] = sim_crystal9[j];
+      sim_crystal10_trunc[counter] = sim_crystal10[j];
+      sim_crystal11_trunc[counter] = sim_crystal11[j];
+      sim_crystal12_trunc[counter] = sim_crystal12[j];
+      sim_crystal13_trunc[counter] = sim_crystal13[j];
+      sim_crystal14_trunc[counter] = sim_crystal14[j];
+      sim_crystal15_trunc[counter] = sim_crystal15[j];
+      sim_crystal16_trunc[counter] = sim_crystal16[j];
+ 
+      counter++;
+      }
+  }
+
+
+  //calculating errors
+  //setting 43keV energy err to 0 right now because not enough statistics and th
+
+
+  //need to remove energies that aren't included in experiment for comparison
+  //can do that by removing the elements of the Full arrays associated with those energies we aren't interested in. 
+ 
+  
+
+ 
+ 
+
+  //--------------------------------------------------------------------------
+  //--------------------------------------------------------------------------
+  //----------end of sim analysis---------------------------------------------
+  //--------------------------------------------------------------------------
+  //--------------------------------------------------------------------------
+
+
+
+  //--------------------------------------------------------------------------
+  //--------------------------------------------------------------------------
+  //----------summing corrections---------------------------------------------
+  //--------------------------------------------------------------------------
+  //--------------------------------------------------------------------------
+
+  //declare new summing corrected arrays. Names are cumbersome, but alleviate any anbiguity
+  
+
+  Double_t Peak_Efficiency_crystal[simnumE][numcrystals] = {};
+  Double_t Total_Efficiency_crystal[simnumE][numcrystals] = {};
+  Double_t Peak_Efficiency_Err_crystal[simnumE][numcrystals] = {};
+  Double_t Total_Efficiency_Err_crystal[simnumE][numcrystals] = {};
+  Double_t Summing_Corrections[numE][numcrystals] = {};
+  Double_t Efficiency_corrected[numE][numcrystals] = {};
+  Double_t Efficiency_Err_corrected[numE][numcrystals] = {};
+  Double_t Sum_Efficiency_corrected[numE] = {};
+  Double_t Sum_Efficiency_Err_corrected[numE] = {};
+  Double_t Sum_Eff_Up_corr[numE] = {};
+  Double_t Sum_Eff_Down_corr[numE] = {};
+  Double_t Sum_Eff_Left_corr[numE] = {};
+  Double_t Sum_Eff_Right_corr[numE] = {};
+  Double_t Sum_Eff_Above_corr[numE] = {};
+  Double_t Sum_Eff_Below_corr[numE] = {};
+  Double_t Sum_Err_temp1[numE] = {};
+  Double_t Sum_Err_temp2[numE] = {};
+  Double_t Sum_Err_temp3[numE] = {};
+  Double_t Sum_Err_temp4[numE] = {};
+  Double_t Sum_Err_temp5[numE] = {};
+  Double_t Sum_Err_temp6[numE] = {};
+  Double_t Sum_Err_temp7[numE] = {};
+  Double_t Sum_Eff_Err_Tot_corr[numE] = {};
+  Double_t Sum_Eff_Err_Down_corr[numE] = {};
+  Double_t Sum_Eff_Err_Up_corr[numE] = {};
+  Double_t Sum_Eff_Err_Right_corr[numE] = {};
+  Double_t Sum_Eff_Err_Left_corr[numE] = {};
+  Double_t Sum_Eff_Err_Above_corr[numE] = {};
+  Double_t Sum_Eff_Err_Below_corr[numE] = {};
+
+  //checking to see how good the peak fits are on the 1596keV
+  // for(int i = 0; i < numcrystals; i++){
+  //   cout << "Peak_Efficiency_crystal[11][" << i << "]: " << Peak_Efficiency_crystal[11][i] << endl;
+  // }
+
+  //experiment array index does not match sim array index, so we need a map between the two
+  //index mapping from exp to sim
+  //int sim_map[64] = {12,13,14,15,32,33,34,35,8,9,10,11,36,37,38,39,56,57,58,59,16,17,18,19,52,53,54,55,28,29,30,31,48,49,50,51,4,5,6,7,60,61,62,63,40,41,42,43,20,21,22,23,24,25,26,27,0,1,2,3,44,45,46,47};
+  int sim_map[64] = {20,21,22,23,40,41,42,43,12,13,14,15,44,45,46,47,64,65,66,67,24,25,26,27,60,61,62,63,36,37,38,39,56,57,58,59,8,9,10,11,68,69,70,71,48,49,50,51,28,29,30,31,32,33,34,35,4,5,6,7,52,53,54,55};
+  int mapper;
+
+  //make new aligned array outside of summing correction loop using the above index map
+  for(int i = 0; i < simnumE; i++){
+    for(int j = 0; j < numcrystals; j++){
+      mapper = sim_map[j];
+      Peak_Efficiency_crystal[i][j] = Peak_Efficiency_crystal_short[i][mapper];
+      Total_Efficiency_crystal[i][j] = Total_Efficiency_crystal_short[i][mapper];
+      Peak_Efficiency_Err_crystal[i][j] = Peak_Efficiency_Err_crystal_short[i][mapper];
+      Total_Efficiency_Err_crystal[i][j] = Total_Efficiency_Err_crystal_short[i][mapper];
+    }
+  }
+
+  // for(int i = 0; i < numcrystals; i++){
+  //   for(int j = 0; j < simnumE; j++){
+  //     if(Peak_Efficiency_crystal[j][i] > 0.1){
+  //     cout << "Peak_Efficiency_crystal[" << j << "][" << i << "]:" << " " << Peak_Efficiency_crystal[j][i] << endl;
+  //     }
+  //   }
+  // }
+
+
+  //computationally cumbersome. can't think of a better way at the moment
+  //looping through crystals and applying summing corrections
+  for(int j = 0; j < numcrystals; j++){
+
+
+    //43keV no correction needed
+    Summing_Corrections[0][j] = 1.0;
+    Efficiency_corrected[0][j] = Efficiency[0][j]/Summing_Corrections[0][j];
+    Efficiency_Err_corrected[0][j] = Efficiency_Err[0][j];
+
+    //87keV no correction needed
+    Summing_Corrections[1][j] = 1.0;
+    Efficiency_corrected[1][j] = Efficiency[1][j]/Summing_Corrections[1][j];
+    Efficiency_Err_corrected[1][j] = Efficiency_Err[1][j];
+
+    //105keV no correction needed
+    Summing_Corrections[2][j] = 1.0;
+    Efficiency_corrected[2][j] = Efficiency[2][j]/Summing_Corrections[2][j];
+    Efficiency_Err_corrected[2][j] = Efficiency_Err[2][j];
+
+    //i have separated terms inside the "sqrt()" with a "   +   " so they're easily identifiable
+
+    //123keV------------------------------------------------------------------
+    Summing_Corrections[3][j] = (1.0 - 0.072*Total_Efficiency_crystal[5][j] - 0.055*Total_Efficiency_crystal[8][j] - 0.019*Total_Efficiency_crystal[17][j] - 0.120*Total_Efficiency_crystal[18][j] - 0.049*Total_Efficiency_crystal[19][j] - 0.130*Total_Efficiency_crystal[20][j] - 0.201*Total_Efficiency_crystal[24][j] - 0.010*Total_Efficiency_crystal[26][j] - 0.401*Total_Efficiency_crystal[27][j] - 0.021*Total_Efficiency_crystal[28][j]);
+
+    Efficiency_corrected[3][j] = Efficiency[3][j]/Summing_Corrections[3][j];  
+
+  //yikes
+    Efficiency_Err_corrected[3][j] = sqrt( (pow((1.0/(1.0 - 0.072*Total_Efficiency_crystal[5][j] - 0.055*Total_Efficiency_crystal[8][j] - 0.019*Total_Efficiency_crystal[17][j] - 0.120*Total_Efficiency_crystal[18][j] - 0.049*Total_Efficiency_crystal[19][j] - 0.130*Total_Efficiency_crystal[20][j] - 0.201*Total_Efficiency_crystal[24][j] - 0.010*Total_Efficiency_crystal[26][j] - 0.401*Total_Efficiency_crystal[27][j] - 0.021*Total_Efficiency_crystal[28][j]))*Efficiency_Err[3][j],2))   +   (pow(((0.055*Efficiency[3][j])/pow((1.0 - 0.072*Total_Efficiency_crystal[5][j] - 0.055*Total_Efficiency_crystal[8][j] - 0.019*Total_Efficiency_crystal[17][j] - 0.120*Total_Efficiency_crystal[18][j] - 0.049*Total_Efficiency_crystal[19][j] - 0.130*Total_Efficiency_crystal[20][j] - 0.201*Total_Efficiency_crystal[24][j] - 0.010*Total_Efficiency_crystal[26][j] - 0.401*Total_Efficiency_crystal[27][j] - 0.021*Total_Efficiency_crystal[28][j]),2))*Total_Efficiency_Err_crystal[5][j],2))   +   (pow(((0.072*Efficiency[3][j])/pow((1.0 - 0.072*Total_Efficiency_crystal[5][j] - 0.055*Total_Efficiency_crystal[8][j] - 0.019*Total_Efficiency_crystal[17][j] - 0.120*Total_Efficiency_crystal[18][j] - 0.049*Total_Efficiency_crystal[19][j] - 0.130*Total_Efficiency_crystal[20][j] - 0.201*Total_Efficiency_crystal[24][j] - 0.010*Total_Efficiency_crystal[26][j] - 0.401*Total_Efficiency_crystal[27][j] - 0.021*Total_Efficiency_crystal[28][j]),2))*Total_Efficiency_Err_crystal[11][j],2))   +   (pow(((0.019*Efficiency[3][j])/pow((1.0 - 0.072*Total_Efficiency_crystal[5][j] - 0.055*Total_Efficiency_crystal[8][j] - 0.019*Total_Efficiency_crystal[17][j] - 0.120*Total_Efficiency_crystal[18][j] - 0.049*Total_Efficiency_crystal[19][j] - 0.130*Total_Efficiency_crystal[20][j] - 0.201*Total_Efficiency_crystal[24][j] - 0.010*Total_Efficiency_crystal[26][j] - 0.401*Total_Efficiency_crystal[27][j] - 0.021*Total_Efficiency_crystal[28][j]),2))*Total_Efficiency_Err_crystal[17][j],2))   +   (pow(((0.120*Efficiency[3][j])/pow((1.0 - 0.072*Total_Efficiency_crystal[5][j] - 0.055*Total_Efficiency_crystal[8][j] - 0.019*Total_Efficiency_crystal[17][j] - 0.120*Total_Efficiency_crystal[18][j] - 0.049*Total_Efficiency_crystal[19][j] - 0.130*Total_Efficiency_crystal[20][j] - 0.201*Total_Efficiency_crystal[24][j] - 0.010*Total_Efficiency_crystal[26][j] - 0.401*Total_Efficiency_crystal[27][j] - 0.021*Total_Efficiency_crystal[28][j]),2))*Total_Efficiency_Err_crystal[18][j],2))   +   (pow(((0.049*Efficiency[3][j])/pow((1.0 - 0.072*Total_Efficiency_crystal[5][j] - 0.055*Total_Efficiency_crystal[8][j] - 0.019*Total_Efficiency_crystal[17][j] - 0.120*Total_Efficiency_crystal[18][j] - 0.049*Total_Efficiency_crystal[19][j] - 0.130*Total_Efficiency_crystal[20][j] - 0.201*Total_Efficiency_crystal[24][j] - 0.010*Total_Efficiency_crystal[26][j] - 0.401*Total_Efficiency_crystal[27][j] - 0.021*Total_Efficiency_crystal[28][j]),2))*Total_Efficiency_Err_crystal[19][j],2))   +   (pow(((0.130*Efficiency[3][j])/pow((1.0 - 0.072*Total_Efficiency_crystal[5][j] - 0.055*Total_Efficiency_crystal[8][j] - 0.019*Total_Efficiency_crystal[17][j] - 0.120*Total_Efficiency_crystal[18][j] - 0.049*Total_Efficiency_crystal[19][j] - 0.130*Total_Efficiency_crystal[20][j] - 0.201*Total_Efficiency_crystal[24][j] - 0.010*Total_Efficiency_crystal[26][j] - 0.401*Total_Efficiency_crystal[27][j] - 0.021*Total_Efficiency_crystal[28][j]),2))*Total_Efficiency_Err_crystal[20][j],2))   +   (pow(((0.201*Efficiency[3][j])/pow((1.0 - 0.072*Total_Efficiency_crystal[5][j] - 0.055*Total_Efficiency_crystal[8][j] - 0.019*Total_Efficiency_crystal[17][j] - 0.120*Total_Efficiency_crystal[18][j] - 0.049*Total_Efficiency_crystal[19][j] - 0.130*Total_Efficiency_crystal[20][j] - 0.201*Total_Efficiency_crystal[24][j] - 0.010*Total_Efficiency_crystal[26][j] - 0.401*Total_Efficiency_crystal[27][j] - 0.021*Total_Efficiency_crystal[28][j]),2))*Total_Efficiency_Err_crystal[24][j],2))   +   (pow(((0.010*Efficiency[3][j])/pow((1.0 - 0.072*Total_Efficiency_crystal[5][j] - 0.055*Total_Efficiency_crystal[8][j] - 0.019*Total_Efficiency_crystal[17][j] - 0.120*Total_Efficiency_crystal[18][j] - 0.049*Total_Efficiency_crystal[19][j] - 0.130*Total_Efficiency_crystal[20][j] - 0.201*Total_Efficiency_crystal[24][j] - 0.010*Total_Efficiency_crystal[26][j] - 0.401*Total_Efficiency_crystal[27][j] - 0.021*Total_Efficiency_crystal[28][j]),2))*Total_Efficiency_Err_crystal[26][j],2))    +   (pow(((0.401*Efficiency[3][j])/pow((1.0 - 0.072*Total_Efficiency_crystal[5][j] - 0.055*Total_Efficiency_crystal[8][j] - 0.019*Total_Efficiency_crystal[17][j] - 0.120*Total_Efficiency_crystal[18][j] - 0.049*Total_Efficiency_crystal[19][j] - 0.130*Total_Efficiency_crystal[20][j] - 0.201*Total_Efficiency_crystal[24][j] - 0.010*Total_Efficiency_crystal[26][j] - 0.401*Total_Efficiency_crystal[27][j] - 0.021*Total_Efficiency_crystal[28][j]),2))*Total_Efficiency_Err_crystal[27][j],2))   +   (pow(((0.021*Efficiency[3][j])/pow((1.0 - 0.072*Total_Efficiency_crystal[5][j] - 0.055*Total_Efficiency_crystal[8][j] - 0.019*Total_Efficiency_crystal[17][j] - 0.120*Total_Efficiency_crystal[18][j] - 0.049*Total_Efficiency_crystal[19][j] - 0.130*Total_Efficiency_crystal[20][j] - 0.201*Total_Efficiency_crystal[24][j] - 0.010*Total_Efficiency_crystal[26][j] - 0.401*Total_Efficiency_crystal[27][j] - 0.021*Total_Efficiency_crystal[28][j]),2))*Total_Efficiency_Err_crystal[28][j],2)) );
+
+
+    //247keV----------------------------------------------------------------------------
+    Summing_Corrections[4][j] = (1.0 - 0.287*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.072*Total_Efficiency_crystal[7][j] - 0.022*Total_Efficiency_crystal[10][j] - 0.134*Total_Efficiency_crystal[11][j] - 0.015*Total_Efficiency_crystal[13][j] - 0.043*Total_Efficiency_crystal[14][j] - 0.022*Total_Efficiency_crystal[16][j] - 0.039*Total_Efficiency_crystal[18][j] - 0.613*Total_Efficiency_crystal[19][j] - 0.059*Total_Efficiency_crystal[21][j] - 0.022*Total_Efficiency_crystal[22][j] - 0.130*Total_Efficiency_crystal[26][j]);
+
+    Efficiency_corrected[4][j] = Efficiency[4][j]/Summing_Corrections[4][j];
+
+    //bigger yikes
+    Efficiency_Err_corrected[4][j] = sqrt( pow((1.0/(1.0 - 0.287*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.072*Total_Efficiency_crystal[7][j] - 0.022*Total_Efficiency_crystal[10][j] - 0.134*Total_Efficiency_crystal[11][j] - 0.015*Total_Efficiency_crystal[13][j] - 0.043*Total_Efficiency_crystal[14][j] - 0.022*Total_Efficiency_crystal[16][j] - 0.039*Total_Efficiency_crystal[18][j] - 0.613*Total_Efficiency_crystal[19][j] - 0.059*Total_Efficiency_crystal[21][j] - 0.022*Total_Efficiency_crystal[22][j] - 0.130*Total_Efficiency_crystal[26][j]))*Efficiency_Err[4][j],2)   +   pow(((0.287*Efficiency[4][j])/pow((1.0 - 0.287*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.072*Total_Efficiency_crystal[7][j] - 0.022*Total_Efficiency_crystal[10][j] - 0.134*Total_Efficiency_crystal[11][j] - 0.015*Total_Efficiency_crystal[13][j] - 0.043*Total_Efficiency_crystal[14][j] - 0.022*Total_Efficiency_crystal[16][j] - 0.039*Total_Efficiency_crystal[18][j] - 0.613*Total_Efficiency_crystal[19][j] - 0.059*Total_Efficiency_crystal[21][j] - 0.022*Total_Efficiency_crystal[22][j] - 0.130*Total_Efficiency_crystal[26][j]),2))*Total_Efficiency_Err_crystal[0][j],2)   +   pow(((0.455*Efficiency[4][j])/pow((1.0 - 0.287*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.072*Total_Efficiency_crystal[7][j] - 0.022*Total_Efficiency_crystal[10][j] - 0.134*Total_Efficiency_crystal[11][j] - 0.015*Total_Efficiency_crystal[13][j] - 0.043*Total_Efficiency_crystal[14][j] - 0.022*Total_Efficiency_crystal[16][j] - 0.039*Total_Efficiency_crystal[18][j] - 0.613*Total_Efficiency_crystal[19][j] - 0.059*Total_Efficiency_crystal[21][j] - 0.022*Total_Efficiency_crystal[22][j] - 0.130*Total_Efficiency_crystal[26][j]),2))*Total_Efficiency_Err_crystal[3][j],2)   +   pow(((0.072*Efficiency[4][j])/pow((1.0 - 0.287*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.072*Total_Efficiency_crystal[7][j] - 0.022*Total_Efficiency_crystal[10][j] - 0.134*Total_Efficiency_crystal[11][j] - 0.015*Total_Efficiency_crystal[13][j] - 0.043*Total_Efficiency_crystal[14][j] - 0.022*Total_Efficiency_crystal[16][j] - 0.039*Total_Efficiency_crystal[18][j] - 0.613*Total_Efficiency_crystal[19][j] - 0.059*Total_Efficiency_crystal[21][j] - 0.022*Total_Efficiency_crystal[22][j] - 0.130*Total_Efficiency_crystal[26][j]),2))*Total_Efficiency_Err_crystal[7][j],2)   +   pow(((0.022*Efficiency[4][j])/pow((1.0 - 0.287*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.072*Total_Efficiency_crystal[7][j] - 0.022*Total_Efficiency_crystal[10][j] - 0.134*Total_Efficiency_crystal[11][j] - 0.015*Total_Efficiency_crystal[13][j] - 0.043*Total_Efficiency_crystal[14][j] - 0.022*Total_Efficiency_crystal[16][j] - 0.039*Total_Efficiency_crystal[18][j] - 0.613*Total_Efficiency_crystal[19][j] - 0.059*Total_Efficiency_crystal[21][j] - 0.022*Total_Efficiency_crystal[22][j] - 0.130*Total_Efficiency_crystal[26][j]),2))*Total_Efficiency_Err_crystal[10][j],2)   +   pow(((0.134*Efficiency[4][j])/pow((1.0 - 0.287*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.072*Total_Efficiency_crystal[7][j] - 0.022*Total_Efficiency_crystal[10][j] - 0.134*Total_Efficiency_crystal[11][j] - 0.015*Total_Efficiency_crystal[13][j] - 0.043*Total_Efficiency_crystal[14][j] - 0.022*Total_Efficiency_crystal[16][j] - 0.039*Total_Efficiency_crystal[18][j] - 0.613*Total_Efficiency_crystal[19][j] - 0.059*Total_Efficiency_crystal[21][j] - 0.022*Total_Efficiency_crystal[22][j] - 0.130*Total_Efficiency_crystal[26][j]),2))*Total_Efficiency_Err_crystal[11][j],2)   +   pow(((0.015*Efficiency[4][j])/pow((1.0 - 0.287*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.072*Total_Efficiency_crystal[7][j] - 0.022*Total_Efficiency_crystal[10][j] - 0.134*Total_Efficiency_crystal[11][j] - 0.015*Total_Efficiency_crystal[13][j] - 0.043*Total_Efficiency_crystal[14][j] - 0.022*Total_Efficiency_crystal[16][j] - 0.039*Total_Efficiency_crystal[18][j] - 0.613*Total_Efficiency_crystal[19][j] - 0.059*Total_Efficiency_crystal[21][j] - 0.022*Total_Efficiency_crystal[22][j] - 0.130*Total_Efficiency_crystal[26][j]),2))*Total_Efficiency_Err_crystal[13][j],2)   +   pow(((0.043*Efficiency[4][j])/pow((1.0 - 0.287*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.072*Total_Efficiency_crystal[7][j] - 0.022*Total_Efficiency_crystal[10][j] - 0.134*Total_Efficiency_crystal[11][j] - 0.015*Total_Efficiency_crystal[13][j] - 0.043*Total_Efficiency_crystal[14][j] - 0.022*Total_Efficiency_crystal[16][j] - 0.039*Total_Efficiency_crystal[18][j] - 0.613*Total_Efficiency_crystal[19][j] - 0.059*Total_Efficiency_crystal[21][j] - 0.022*Total_Efficiency_crystal[22][j] - 0.130*Total_Efficiency_crystal[26][j]),2))*Total_Efficiency_Err_crystal[14][j],2)   +   pow(((0.022*Efficiency[4][j])/pow((1.0 - 0.287*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.072*Total_Efficiency_crystal[7][j] - 0.022*Total_Efficiency_crystal[10][j] - 0.134*Total_Efficiency_crystal[11][j] - 0.015*Total_Efficiency_crystal[13][j] - 0.043*Total_Efficiency_crystal[14][j] - 0.022*Total_Efficiency_crystal[16][j] - 0.039*Total_Efficiency_crystal[18][j] - 0.613*Total_Efficiency_crystal[19][j] - 0.059*Total_Efficiency_crystal[21][j] - 0.022*Total_Efficiency_crystal[22][j] - 0.130*Total_Efficiency_crystal[26][j]),2))*Total_Efficiency_Err_crystal[16][j],2)   +   pow(((0.039*Efficiency[4][j])/pow((1.0 - 0.287*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.072*Total_Efficiency_crystal[7][j] - 0.022*Total_Efficiency_crystal[10][j] - 0.134*Total_Efficiency_crystal[11][j] - 0.015*Total_Efficiency_crystal[13][j] - 0.043*Total_Efficiency_crystal[14][j] - 0.022*Total_Efficiency_crystal[16][j] - 0.039*Total_Efficiency_crystal[18][j] - 0.613*Total_Efficiency_crystal[19][j] - 0.059*Total_Efficiency_crystal[21][j] - 0.022*Total_Efficiency_crystal[22][j] - 0.130*Total_Efficiency_crystal[26][j]),2))*Total_Efficiency_Err_crystal[18][j],2)   +   pow(((0.613*Efficiency[4][j])/pow((1.0 - 0.287*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.072*Total_Efficiency_crystal[7][j] - 0.022*Total_Efficiency_crystal[10][j] - 0.134*Total_Efficiency_crystal[11][j] - 0.015*Total_Efficiency_crystal[13][j] - 0.043*Total_Efficiency_crystal[14][j] - 0.022*Total_Efficiency_crystal[16][j] - 0.039*Total_Efficiency_crystal[18][j] - 0.613*Total_Efficiency_crystal[19][j] - 0.059*Total_Efficiency_crystal[21][j] - 0.022*Total_Efficiency_crystal[22][j] - 0.130*Total_Efficiency_crystal[26][j]),2))*Total_Efficiency_Err_crystal[19][j],2)   +   pow(((0.059*Efficiency[4][j])/pow((1.0 - 0.287*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.072*Total_Efficiency_crystal[7][j] - 0.022*Total_Efficiency_crystal[10][j] - 0.134*Total_Efficiency_crystal[11][j] - 0.015*Total_Efficiency_crystal[13][j] - 0.043*Total_Efficiency_crystal[14][j] - 0.022*Total_Efficiency_crystal[16][j] - 0.039*Total_Efficiency_crystal[18][j] - 0.613*Total_Efficiency_crystal[19][j] - 0.059*Total_Efficiency_crystal[21][j] - 0.022*Total_Efficiency_crystal[22][j] - 0.130*Total_Efficiency_crystal[26][j]),2))*Total_Efficiency_Err_crystal[21][j],2)   +   pow(((0.022*Efficiency[4][j])/pow((1.0 - 0.287*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.072*Total_Efficiency_crystal[7][j] - 0.022*Total_Efficiency_crystal[10][j] - 0.134*Total_Efficiency_crystal[11][j] - 0.015*Total_Efficiency_crystal[13][j] - 0.043*Total_Efficiency_crystal[14][j] - 0.022*Total_Efficiency_crystal[16][j] - 0.039*Total_Efficiency_crystal[18][j] - 0.613*Total_Efficiency_crystal[19][j] - 0.059*Total_Efficiency_crystal[21][j] - 0.022*Total_Efficiency_crystal[22][j] - 0.130*Total_Efficiency_crystal[26][j]),2))*Total_Efficiency_Err_crystal[22][j],2)   +   pow(((0.130*Efficiency[4][j])/pow((1.0 - 0.287*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.072*Total_Efficiency_crystal[7][j] - 0.022*Total_Efficiency_crystal[10][j] - 0.134*Total_Efficiency_crystal[11][j] - 0.015*Total_Efficiency_crystal[13][j] - 0.043*Total_Efficiency_crystal[14][j] - 0.022*Total_Efficiency_crystal[16][j] - 0.039*Total_Efficiency_crystal[18][j] - 0.613*Total_Efficiency_crystal[19][j] - 0.059*Total_Efficiency_crystal[21][j] - 0.022*Total_Efficiency_crystal[22][j] - 0.130*Total_Efficiency_crystal[26][j]),2))*Total_Efficiency_Err_crystal[26][j],2) );
+
+    //591keV------------------------------------------------------------------------------------------------------
+    Summing_Corrections[5][j] = (1.0 - 0.297*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.178*Total_Efficiency_crystal[5][j] - 0.196*Total_Efficiency_crystal[19][j] - 0.800*Total_Efficiency_crystal[24][j]);
+
+    Efficiency_corrected[5][j] = Efficiency[5][j]/Summing_Corrections[5][j];
+
+    Efficiency_Err_corrected[5][j] = sqrt( pow((1.0/(1.0 - 0.297*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.178*Total_Efficiency_crystal[5][j] - 0.196*Total_Efficiency_crystal[19][j] - 0.800*Total_Efficiency_crystal[24][j])*Efficiency_Err[5][j]),2)   +   pow(((0.297*Efficiency[5][j]/pow((1.0 - 0.297*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.178*Total_Efficiency_crystal[5][j] - 0.196*Total_Efficiency_crystal[19][j] - 0.800*Total_Efficiency_crystal[24][j]),2)))*Total_Efficiency_Err_crystal[0][j],2)   +   pow(((0.455*Efficiency[5][j]/pow((1.0 - 0.297*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.178*Total_Efficiency_crystal[5][j] - 0.196*Total_Efficiency_crystal[19][j] - 0.800*Total_Efficiency_crystal[24][j]),2)))*Total_Efficiency_Err_crystal[3][j],2)   +   pow(((0.178*Efficiency[5][j]/pow((1.0 - 0.297*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.178*Total_Efficiency_crystal[5][j] - 0.196*Total_Efficiency_crystal[19][j] - 0.800*Total_Efficiency_crystal[24][j]),2)))*Total_Efficiency_Err_crystal[5][j],2)   +   pow(((0.196*Efficiency[5][j]/pow((1.0 - 0.297*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.178*Total_Efficiency_crystal[5][j] - 0.196*Total_Efficiency_crystal[19][j] - 0.800*Total_Efficiency_crystal[24][j]),2)))*Total_Efficiency_Err_crystal[19][j],2)   +   pow(((0.800*Efficiency[5][j]/pow((1.0 - 0.297*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.178*Total_Efficiency_crystal[5][j] - 0.196*Total_Efficiency_crystal[19][j] - 0.800*Total_Efficiency_crystal[24][j]),2)))*Total_Efficiency_Err_crystal[24][j],2) );
+
+    //723keV-----------------------------------------------------------------------------------------------------
+    Summing_Corrections[6][j] = (1.0 - 0.154*Total_Efficiency_crystal[0][j] - 0.243*Total_Efficiency_crystal[3][j] - 0.013*Total_Efficiency_crystal[5][j] - 0.014*Total_Efficiency_crystal[14][j] - 0.518*Total_Efficiency_crystal[20][j] - 0.465*Total_Efficiency_crystal[23][j]);
+
+    Efficiency_corrected[6][j] = Efficiency[6][j]/Summing_Corrections[6][j];
+
+    Efficiency_Err_corrected[6][j] = sqrt( pow(((1.0/(1.0 - 0.154*Total_Efficiency_crystal[0][j] - 0.243*Total_Efficiency_crystal[3][j] - 0.013*Total_Efficiency_crystal[5][j] - 0.014*Total_Efficiency_crystal[14][j] - 0.518*Total_Efficiency_crystal[20][j] - 0.465*Total_Efficiency_crystal[23][j]))*Efficiency_Err[6][j]),2)   +   pow((((0.154*Efficiency[6][j])/pow((1.0 - 0.154*Total_Efficiency_crystal[0][j] - 0.243*Total_Efficiency_crystal[3][j] - 0.013*Total_Efficiency_crystal[5][j] - 0.014*Total_Efficiency_crystal[14][j] - 0.518*Total_Efficiency_crystal[20][j] - 0.465*Total_Efficiency_crystal[23][j]),2))*Total_Efficiency_Err_crystal[0][j]),2)   +   pow((((0.243*Efficiency[6][j])/pow((1.0 - 0.154*Total_Efficiency_crystal[0][j] - 0.243*Total_Efficiency_crystal[3][j] - 0.013*Total_Efficiency_crystal[5][j] - 0.014*Total_Efficiency_crystal[14][j] - 0.518*Total_Efficiency_crystal[20][j] - 0.465*Total_Efficiency_crystal[23][j]),2))*Total_Efficiency_Err_crystal[3][j]),2)   +   pow((((0.013*Efficiency[6][j])/pow((1.0 - 0.154*Total_Efficiency_crystal[0][j] - 0.243*Total_Efficiency_crystal[3][j] - 0.013*Total_Efficiency_crystal[5][j] - 0.014*Total_Efficiency_crystal[14][j] - 0.518*Total_Efficiency_crystal[20][j] - 0.465*Total_Efficiency_crystal[23][j]),2))*Total_Efficiency_Err_crystal[5][j]),2)   +   pow((((0.014*Efficiency[6][j])/pow((1.0 - 0.154*Total_Efficiency_crystal[0][j] - 0.243*Total_Efficiency_crystal[3][j] - 0.013*Total_Efficiency_crystal[5][j] - 0.014*Total_Efficiency_crystal[14][j] - 0.518*Total_Efficiency_crystal[20][j] - 0.465*Total_Efficiency_crystal[23][j]),2))*Total_Efficiency_Err_crystal[14][j]),2)   +   pow((((0.518*Efficiency[6][j])/pow((1.0 - 0.154*Total_Efficiency_crystal[0][j] - 0.243*Total_Efficiency_crystal[3][j] - 0.013*Total_Efficiency_crystal[5][j] - 0.014*Total_Efficiency_crystal[14][j] - 0.518*Total_Efficiency_crystal[20][j] - 0.465*Total_Efficiency_crystal[23][j]),2))*Total_Efficiency_Err_crystal[20][j]),2)   +   pow((((0.465*Efficiency[6][j])/pow((1.0 - 0.154*Total_Efficiency_crystal[0][j] - 0.243*Total_Efficiency_crystal[3][j] - 0.013*Total_Efficiency_crystal[5][j] - 0.014*Total_Efficiency_crystal[14][j] - 0.518*Total_Efficiency_crystal[20][j] - 0.465*Total_Efficiency_crystal[23][j]),2))*Total_Efficiency_Err_crystal[23][j]),2) );
+
+    //873keV-------------------------------------------------------------------------------------------------------
+    Summing_Corrections[7][j] = ((1.0 + 0.024*((Peak_Efficiency_crystal[5][j]*Peak_Efficiency_crystal[14][j])/Peak_Efficiency_crystal[20][j]))*(1.0 - 0.282*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.894*Total_Efficiency_crystal[18][j]));
+
+    Efficiency_corrected[7][j] = Efficiency[7][j]/Summing_Corrections[7][j];
+
+    Efficiency_Err_corrected[7][j] = sqrt( pow(((1.0/((1.0 + 0.024*(Peak_Efficiency_crystal[5][j]*Peak_Efficiency_crystal[14][j]/Peak_Efficiency_crystal[20][j]))*(1.0 - 0.282*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.894*Total_Efficiency_crystal[18][j]))))*Efficiency_Err[7][j],2)   +   pow((0.024*Efficiency[7][j]*Peak_Efficiency_crystal[14][j]/(pow((1.0 + 0.024*Peak_Efficiency_crystal[5][j]*Peak_Efficiency_crystal[14][j]/Peak_Efficiency_crystal[20][j]),2)*Peak_Efficiency_crystal[20][j]*(1.0 - 0.282*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.894*Total_Efficiency_crystal[18][j])))*Peak_Efficiency_Err_crystal[5][j],2)   +   pow((0.024*Efficiency[7][j]*Peak_Efficiency_crystal[5][j]/(pow((1.0 + 0.024*Peak_Efficiency_crystal[5][j]*Peak_Efficiency_crystal[14][j]/Peak_Efficiency_crystal[20][j]),2)*Peak_Efficiency_crystal[20][j]*(1.0 - 0.282*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.894*Total_Efficiency_crystal[18][j])))*Peak_Efficiency_Err_crystal[14][j],2)   +   pow((0.024*Efficiency[7][j]*Peak_Efficiency_crystal[5][j]*Peak_Efficiency_crystal[14][j]/(pow((1.0 + 0.024*Peak_Efficiency_crystal[5][j]*Peak_Efficiency_crystal[14][j]/Peak_Efficiency_crystal[20][j]),2)*pow(Peak_Efficiency_crystal[20][j],2)*(1.0 - 0.282*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.894*Total_Efficiency_crystal[18][j])))*Peak_Efficiency_Err_crystal[20][j],2)   +   pow(((0.282*Efficiency[7][j]/((1.0 + 0.024*(Peak_Efficiency_crystal[5][j]*Peak_Efficiency_crystal[14][j]/Peak_Efficiency_crystal[20][j]))*pow((1.0 - 0.282*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.894*Total_Efficiency_crystal[18][j]),2))))*Total_Efficiency_Err_crystal[0][j],2)   +   pow(((0.455*Efficiency[7][j]/((1.0 + 0.024*(Peak_Efficiency_crystal[5][j]*Peak_Efficiency_crystal[14][j]/Peak_Efficiency_crystal[20][j]))*pow((1.0 - 0.282*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.894*Total_Efficiency_crystal[18][j]),2))))*Total_Efficiency_Err_crystal[3][j],2)   +   pow(((0.894*Efficiency[7][j]/((1.0 + 0.024*(Peak_Efficiency_crystal[5][j]*Peak_Efficiency_crystal[14][j]/Peak_Efficiency_crystal[20][j]))*pow((1.0 - 0.282*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.894*Total_Efficiency_crystal[18][j]),2))))*Total_Efficiency_Err_crystal[18][j],2) );
+
+    //996keV---------------------------------------------------------------------------------------------------------
+    Summing_Corrections[8][j] = ((1.0 + 0.507*((Peak_Efficiency_crystal[3][j]*Peak_Efficiency_crystal[20][j])/Peak_Efficiency_crystal[23][j]))*(1.0 - 0.894*Total_Efficiency_crystal[18][j]));
+
+    Efficiency_corrected[8][j] = Efficiency[8][j]/Summing_Corrections[8][j];
+
+    Efficiency_Err_corrected[8][j] = sqrt( pow((1.0/((1.0 + 0.507*((Peak_Efficiency_crystal[3][j]*Peak_Efficiency_crystal[20][j])/Peak_Efficiency_crystal[23][j]))*(1.0 - 0.894*Total_Efficiency_crystal[18][j])))*Efficiency_Err[8][j],2)   +   pow((0.507*Efficiency[8][j]*Peak_Efficiency_crystal[20][j]/(pow((1.0 + 0.507*((Peak_Efficiency_crystal[3][j]*Peak_Efficiency_crystal[20][j])/Peak_Efficiency_crystal[23][j])),2)*Peak_Efficiency_crystal[23][j]*(1.0 - 0.894*Total_Efficiency_crystal[18][j])))*Peak_Efficiency_Err_crystal[3][j],2)   +   pow((0.507*Efficiency[8][j]*Peak_Efficiency_crystal[3][j]/(pow((1.0 + 0.507*((Peak_Efficiency_crystal[3][j]*Peak_Efficiency_crystal[20][j])/Peak_Efficiency_crystal[23][j])),2)*Peak_Efficiency_crystal[23][j]*(1.0 - 0.894*Total_Efficiency_crystal[18][j])))*Peak_Efficiency_Err_crystal[20][j],2)   +   pow((0.507*Efficiency[8][j]*Peak_Efficiency_crystal[3][j]*Peak_Efficiency_crystal[20][j]/(pow((1.0 + 0.507*((Peak_Efficiency_crystal[3][j]*Peak_Efficiency_crystal[20][j])/Peak_Efficiency_crystal[23][j])),2)*pow(Peak_Efficiency_crystal[23][j],2)*(1.0 - 0.894*Total_Efficiency_crystal[18][j])))*Peak_Efficiency_Err_crystal[23][j],2)   +   pow((0.894*Efficiency[8][j]/((1.0 + 0.507*((Peak_Efficiency_crystal[3][j]*Peak_Efficiency_crystal[20][j])/Peak_Efficiency_crystal[23][j]))*pow((1.0 - 0.894*Total_Efficiency_crystal[18][j]),2)))*Total_Efficiency_Err[8][j],2) );
+
+    //1004keV----------------------------------------------------------------------------------------------------------
+    Summing_Corrections[9][j] = ((1.0 + 0.221*((Peak_Efficiency_crystal[5][j]*Peak_Efficiency_crystal[19][j])/Peak_Efficiency_crystal[24][j]))*(1.0 - 0.282*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.217*Total_Efficiency_crystal[11][j]));
+
+    Efficiency_corrected[9][j] = Efficiency[9][j]/Summing_Corrections[9][j];
+
+    Efficiency_Err_corrected[9][j] = sqrt( pow((1.0/((1.0 + 0.221*((Peak_Efficiency_crystal[5][j]*Peak_Efficiency_crystal[19][j])/Peak_Efficiency_crystal[24][j]))*(1.0 - 0.282*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.217*Total_Efficiency_crystal[11][j])))*Efficiency_Err[9][j],2)   +   pow((0.221*Efficiency[9][j]*Peak_Efficiency_crystal[19][j]/(pow((1.0 + 0.221*((Peak_Efficiency_crystal[5][j]*Peak_Efficiency_crystal[19][j])/Peak_Efficiency_crystal[24][j])),2)*Peak_Efficiency_crystal[24][j]*(1.0 - 0.282*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.217*Total_Efficiency_crystal[11][j])))*Peak_Efficiency_Err_crystal[5][j],2)   +   pow((0.221*Efficiency[9][j]*Peak_Efficiency_crystal[5][j]/(pow((1.0 + 0.221*((Peak_Efficiency_crystal[5][j]*Peak_Efficiency_crystal[19][j])/Peak_Efficiency_crystal[24][j])),2)*Peak_Efficiency_crystal[24][j]*(1.0 - 0.282*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.217*Total_Efficiency_crystal[11][j])))*Peak_Efficiency_Err_crystal[19][j],2)   +   pow((0.221*Efficiency[9][j]*Peak_Efficiency_crystal[5][j]*Peak_Efficiency_crystal[19][j]/(pow((1.0 + 0.221*((Peak_Efficiency_crystal[5][j]*Peak_Efficiency_crystal[19][j])/Peak_Efficiency_crystal[24][j])),2)*pow(Peak_Efficiency_crystal[24][j],2)*(1.0 - 0.282*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.217*Total_Efficiency_crystal[11][j])))*Peak_Efficiency_Err_crystal[24][j],2)   +   pow((0.282*Efficiency[9][j]/((1.0 + 0.221*((Peak_Efficiency_crystal[5][j]*Peak_Efficiency_crystal[19][j])/Peak_Efficiency_crystal[24][j]))*pow((1.0 - 0.282*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.217*Total_Efficiency_crystal[11][j]),2)))*Total_Efficiency_Err_crystal[0][j],2)   +   pow((0.455*Efficiency[9][j]/((1.0 + 0.221*((Peak_Efficiency_crystal[5][j]*Peak_Efficiency_crystal[19][j])/Peak_Efficiency_crystal[24][j]))*pow((1.0 - 0.282*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.217*Total_Efficiency_crystal[11][j]),2)))*Total_Efficiency_Err_crystal[3][j],2)   +   pow((0.217*Efficiency[9][j]/((1.0 + 0.221*((Peak_Efficiency_crystal[5][j]*Peak_Efficiency_crystal[19][j])/Peak_Efficiency_crystal[24][j]))*pow((1.0 - 0.282*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j] - 0.217*Total_Efficiency_crystal[11][j]),2)))*Total_Efficiency_Err_crystal[11][j],2) );
+
+    //1274keV------------------------------------------------------------------------------------------------------------
+    Summing_Corrections[10][j] = ((1.0 + 0.014*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[10][j])/Peak_Efficiency_crystal[27][j]))*(1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j]));
+
+    Efficiency_corrected[10][j] = Efficiency[10][j]/Summing_Corrections[10][j];
+
+    Efficiency_Err_corrected[10][j] = sqrt( pow((1.0/((1.0 + 0.014*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[10][j])/Peak_Efficiency_crystal[27][j]))*(1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j])))*Efficiency_Err[10][j],2)   +   pow((0.014*Efficiency[10][j]*Peak_Efficiency_crystal[10][j]/(pow((1.0 + 0.014*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[10][j])/Peak_Efficiency_crystal[27][j])),2)*Peak_Efficiency_crystal[27][j]*(1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j])))*Peak_Efficiency_Err_crystal[17][j],2)   +   pow((0.014*Efficiency[10][j]*Peak_Efficiency_crystal[17][j]/(pow((1.0 + 0.014*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[10][j])/Peak_Efficiency_crystal[27][j])),2)*Peak_Efficiency_crystal[27][j]*(1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j])))*Peak_Efficiency_Err_crystal[10][j],2)   +   pow((0.014*Efficiency[10][j]*Peak_Efficiency_crystal[10][j]*Peak_Efficiency_crystal[17][j]/(pow((1.0 + 0.014*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[10][j])/Peak_Efficiency_crystal[27][j])),2)*pow(Peak_Efficiency_crystal[27][j],2)*(1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j])))*Peak_Efficiency_Err_crystal[27][j],2)   +   pow((0.281*Efficiency[10][j]/((1.0 + 0.014*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[10][j])/Peak_Efficiency_crystal[27][j]))*pow((1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j]),2)))*Total_Efficiency_Err_crystal[0][j],2)   +   pow((0.455*Efficiency[10][j]/((1.0 + 0.014*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[10][j])/Peak_Efficiency_crystal[27][j]))*pow((1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j]),2)))*Total_Efficiency_Err_crystal[3][j],2) );
+
+    //1596keV----------------------------------------------------------------------------------------------------------
+    Summing_Corrections[11][j] = ((1.0 + 0.275*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[22][j])/Peak_Efficiency_crystal[28][j]) + 5.568*((Peak_Efficiency_crystal[20][j]*Peak_Efficiency_crystal[18][j])/Peak_Efficiency_crystal[28][j]) + 2.094*((Peak_Efficiency_crystal[24][j]*Peak_Efficiency_crystal[11][j])/Peak_Efficiency_crystal[28][j]) + 0.052*((Peak_Efficiency_crystal[25][j]*Peak_Efficiency_crystal[9][j])/Peak_Efficiency_crystal[28][j]))*(1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j]));
+
+    Efficiency_corrected[11][j] = Efficiency[11][j]/Summing_Corrections[11][j];
+
+    //good luck troubleshooting
+    Efficiency_Err_corrected[11][j] = sqrt( pow((1.0/((1.0 + 0.275*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[22][j])/Peak_Efficiency_crystal[28][j]) + 5.568*((Peak_Efficiency_crystal[20][j]*Peak_Efficiency_crystal[18][j])/Peak_Efficiency_crystal[28][j]) + 2.094*((Peak_Efficiency_crystal[24][j]*Peak_Efficiency_crystal[11][j])/Peak_Efficiency_crystal[28][j]) + 0.052*((Peak_Efficiency_crystal[25][j]*Peak_Efficiency_crystal[9][j])/Peak_Efficiency_crystal[28][j]))*(1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j])))*Efficiency_Err[11][j],2)   +   pow((0.275*Efficiency[11][j]*Peak_Efficiency_crystal[22][j]/(Peak_Efficiency_crystal[28][j]*pow((1.0 + 0.275*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[22][j])/Peak_Efficiency_crystal[28][j]) + 5.568*((Peak_Efficiency_crystal[20][j]*Peak_Efficiency_crystal[18][j])/Peak_Efficiency_crystal[28][j]) + 2.094*((Peak_Efficiency_crystal[24][j]*Peak_Efficiency_crystal[11][j])/Peak_Efficiency_crystal[28][j]) + 0.052*((Peak_Efficiency_crystal[25][j]*Peak_Efficiency_crystal[9][j])/Peak_Efficiency_crystal[28][j])),2)*(1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j])))*Peak_Efficiency_Err_crystal[17][j],2)   +   pow((0.275*Efficiency[11][j]*Peak_Efficiency_crystal[17][j]/(Peak_Efficiency_crystal[28][j]*pow((1.0 + 0.275*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[22][j])/Peak_Efficiency_crystal[28][j]) + 5.568*((Peak_Efficiency_crystal[20][j]*Peak_Efficiency_crystal[18][j])/Peak_Efficiency_crystal[28][j]) + 2.094*((Peak_Efficiency_crystal[24][j]*Peak_Efficiency_crystal[11][j])/Peak_Efficiency_crystal[28][j]) + 0.052*((Peak_Efficiency_crystal[25][j]*Peak_Efficiency_crystal[9][j])/Peak_Efficiency_crystal[28][j])),2)*(1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j])))*Peak_Efficiency_Err_crystal[22][j],2)   +   pow((5.568*Efficiency[11][j]*Peak_Efficiency_crystal[18][j]/(Peak_Efficiency_crystal[28][j]*pow((1.0 + 0.275*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[22][j])/Peak_Efficiency_crystal[28][j]) + 5.568*((Peak_Efficiency_crystal[20][j]*Peak_Efficiency_crystal[18][j])/Peak_Efficiency_crystal[28][j]) + 2.094*((Peak_Efficiency_crystal[24][j]*Peak_Efficiency_crystal[11][j])/Peak_Efficiency_crystal[28][j]) + 0.052*((Peak_Efficiency_crystal[25][j]*Peak_Efficiency_crystal[9][j])/Peak_Efficiency_crystal[28][j])),2)*(1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j])))*Peak_Efficiency_Err_crystal[20][j],2)   +   pow((5.568*Efficiency[11][j]*Peak_Efficiency_crystal[20][j]/(Peak_Efficiency_crystal[28][j]*pow((1.0 + 0.275*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[22][j])/Peak_Efficiency_crystal[28][j]) + 5.568*((Peak_Efficiency_crystal[20][j]*Peak_Efficiency_crystal[18][j])/Peak_Efficiency_crystal[28][j]) + 2.094*((Peak_Efficiency_crystal[24][j]*Peak_Efficiency_crystal[11][j])/Peak_Efficiency_crystal[28][j]) + 0.052*((Peak_Efficiency_crystal[25][j]*Peak_Efficiency_crystal[9][j])/Peak_Efficiency_crystal[28][j])),2)*(1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j])))*Peak_Efficiency_Err_crystal[18][j],2)   +   pow((2.094*Efficiency[11][j]*Peak_Efficiency_crystal[11][j]/(Peak_Efficiency_crystal[28][j]*pow((1.0 + 0.275*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[22][j])/Peak_Efficiency_crystal[28][j]) + 5.568*((Peak_Efficiency_crystal[20][j]*Peak_Efficiency_crystal[18][j])/Peak_Efficiency_crystal[28][j]) + 2.094*((Peak_Efficiency_crystal[24][j]*Peak_Efficiency_crystal[11][j])/Peak_Efficiency_crystal[28][j]) + 0.052*((Peak_Efficiency_crystal[25][j]*Peak_Efficiency_crystal[9][j])/Peak_Efficiency_crystal[28][j])),2)*(1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j])))*Peak_Efficiency_Err_crystal[24][j],2)   +   pow((2.094*Efficiency[11][j]*Peak_Efficiency_crystal[24][j]/(Peak_Efficiency_crystal[28][j]*pow((1.0 + 0.275*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[22][j])/Peak_Efficiency_crystal[28][j]) + 5.568*((Peak_Efficiency_crystal[20][j]*Peak_Efficiency_crystal[18][j])/Peak_Efficiency_crystal[28][j]) + 2.094*((Peak_Efficiency_crystal[24][j]*Peak_Efficiency_crystal[11][j])/Peak_Efficiency_crystal[28][j]) + 0.052*((Peak_Efficiency_crystal[25][j]*Peak_Efficiency_crystal[9][j])/Peak_Efficiency_crystal[28][j])),2)*(1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j])))*Peak_Efficiency_Err_crystal[11][j],2)   +   pow((0.052*Efficiency[11][j]*Peak_Efficiency_crystal[9][j]/(Peak_Efficiency_crystal[28][j]*pow((1.0 + 0.275*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[22][j])/Peak_Efficiency_crystal[28][j]) + 5.568*((Peak_Efficiency_crystal[20][j]*Peak_Efficiency_crystal[18][j])/Peak_Efficiency_crystal[28][j]) + 2.094*((Peak_Efficiency_crystal[24][j]*Peak_Efficiency_crystal[11][j])/Peak_Efficiency_crystal[28][j]) + 0.052*((Peak_Efficiency_crystal[25][j]*Peak_Efficiency_crystal[9][j])/Peak_Efficiency_crystal[28][j])),2)*(1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j])))*Peak_Efficiency_Err_crystal[25][j],2)   +   pow((0.052*Efficiency[11][j]*Peak_Efficiency_crystal[25][j]/(Peak_Efficiency_crystal[28][j]*pow((1.0 + 0.275*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[22][j])/Peak_Efficiency_crystal[28][j]) + 5.568*((Peak_Efficiency_crystal[20][j]*Peak_Efficiency_crystal[18][j])/Peak_Efficiency_crystal[28][j]) + 2.094*((Peak_Efficiency_crystal[24][j]*Peak_Efficiency_crystal[11][j])/Peak_Efficiency_crystal[28][j]) + 0.052*((Peak_Efficiency_crystal[25][j]*Peak_Efficiency_crystal[9][j])/Peak_Efficiency_crystal[28][j])),2)*(1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j])))*Peak_Efficiency_Err_crystal[9][j],2)   +   pow((0.281*Efficiency[11][j]/((1.0 + 0.275*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[22][j])/Peak_Efficiency_crystal[28][j]) + 5.568*((Peak_Efficiency_crystal[20][j]*Peak_Efficiency_crystal[18][j])/Peak_Efficiency_crystal[28][j]) + 2.094*((Peak_Efficiency_crystal[24][j]*Peak_Efficiency_crystal[11][j])/Peak_Efficiency_crystal[28][j]) + 0.052*((Peak_Efficiency_crystal[25][j]*Peak_Efficiency_crystal[9][j])/Peak_Efficiency_crystal[28][j]))*pow((1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j]),2)))*Total_Efficiency_Err_crystal[0][j],2)   +   pow((0.455*Efficiency[11][j]/((1.0 + 0.275*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[22][j])/Peak_Efficiency_crystal[28][j]) + 5.568*((Peak_Efficiency_crystal[20][j]*Peak_Efficiency_crystal[18][j])/Peak_Efficiency_crystal[28][j]) + 2.094*((Peak_Efficiency_crystal[24][j]*Peak_Efficiency_crystal[11][j])/Peak_Efficiency_crystal[28][j]) + 0.052*((Peak_Efficiency_crystal[25][j]*Peak_Efficiency_crystal[9][j])/Peak_Efficiency_crystal[28][j]))*pow((1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j]),2)))*Total_Efficiency_Err_crystal[3][j],2)   +   pow((Efficiency[11][j]*(0.275*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[22][j])/Peak_Efficiency_crystal[28][j]) + 5.568*((Peak_Efficiency_crystal[20][j]*Peak_Efficiency_crystal[18][j])/Peak_Efficiency_crystal[28][j]) + 2.094*((Peak_Efficiency_crystal[24][j]*Peak_Efficiency_crystal[11][j])/Peak_Efficiency_crystal[28][j]) + 0.052*((Peak_Efficiency_crystal[25][j]*Peak_Efficiency_crystal[9][j])/Peak_Efficiency_crystal[28][j]))/(pow((1.0 + 0.275*((Peak_Efficiency_crystal[17][j]*Peak_Efficiency_crystal[22][j])/Peak_Efficiency_crystal[28][j]) + 5.568*((Peak_Efficiency_crystal[20][j]*Peak_Efficiency_crystal[18][j])/Peak_Efficiency_crystal[28][j]) + 2.094*((Peak_Efficiency_crystal[24][j]*Peak_Efficiency_crystal[11][j])/Peak_Efficiency_crystal[28][j]) + 0.052*((Peak_Efficiency_crystal[25][j]*Peak_Efficiency_crystal[9][j])/Peak_Efficiency_crystal[28][j])),2)*(1.0 - 0.281*Total_Efficiency_crystal[0][j] - 0.455*Total_Efficiency_crystal[3][j])))*Peak_Efficiency_Err_crystal[28][j],2) );
+
+    // cout << "Efficiency[11][" << j << "]: " << Efficiency[11][j] << " +- " << Efficiency_Err[11][j] << "  " << "Efficiency_corrected[11][" << j << "]: " << Efficiency_corrected[11][j] << " +- " << Efficiency_Err_corrected[11][j] << "  " << "Summing_Corrections[11][" << j << "]: " << Summing_Corrections[11][j] << endl;
+
+  } 
+
+  cout << "------------------------------------" << endl;
+
+
+  //adding up corrected efficiencies and temporary error terms for each energy for each region of interest
+  //looping through crystals
+  for(int i = 0; i < numcrystals; i++){
+    //looping through energies
+    for(int j = 0; j < numE; j++){
+      //total efficiencies
+      Sum_Efficiency_corrected[j] += Efficiency_corrected[j][i];
+      Sum_Err_temp1[j] += pow(Efficiency_Err_corrected[j][i],2);
+      //checking to see if the crystal is downstream
+      if(std::find(downcrystals.begin(), downcrystals.end(), i) != downcrystals.end()) {
+	//populating downstream efficiency and error vectors
+	Sum_Eff_Down_corr[j] += Efficiency_corrected[j][i];
+	Sum_Err_temp2[j] += pow(Efficiency_Err_corrected[j][i],2);
+      }
+      //checking to see if the crystal is upstream
+      if(std::find(upcrystals.begin(), upcrystals.end(), i) != upcrystals.end()) {
+	//populating upstream efficiency and error vectors
+        Sum_Eff_Up_corr[j] += Efficiency_corrected[j][i];
+	Sum_Err_temp3[j] += pow(Efficiency_Err_corrected[j][i],2);
+      }
+      //checking to see if the crystal is on the right
+      if(std::find(rightcrystals.begin(), rightcrystals.end(), i) != rightcrystals.end()) {
+	//populating right efficiency and error vectors
+        Sum_Eff_Right_corr[j] += Efficiency_corrected[j][i];
+	Sum_Err_temp4[j] += pow(Efficiency_Err_corrected[j][i],2);
+      }
+      //checking to see if the crystal is on the left
+      if(std::find(leftcrystals.begin(), leftcrystals.end(), i) != leftcrystals.end()) {
+	//populating left efficiency and error vectors
+        Sum_Eff_Left_corr[j] += Efficiency_corrected[j][i];
+	Sum_Err_temp5[j] += pow(Efficiency_Err_corrected[j][i],2);
+      }
+      //checking to see if the crystal is above
+      if(std::find(abovecrystals.begin(), abovecrystals.end(), i) != abovecrystals.end()) {
+	//populating above efficiency and error vectors
+        Sum_Eff_Above_corr[j] += Efficiency_corrected[j][i];
+	Sum_Err_temp6[j] += pow(Efficiency_Err_corrected[j][i],2);
+      }
+      //checking to see if the crystal is below
+      if(std::find(belowcrystals.begin(), belowcrystals.end(), i) != belowcrystals.end()) {
+	//populating below efficiency and error vectors
+        Sum_Eff_Below_corr[j] += Efficiency_corrected[j][i];
+	Sum_Err_temp7[j] += pow(Efficiency_Err_corrected[j][i],2);
+      }
+
+    }
+
+  }
+  
+  //calculating summing corrected errors
+  for(int i = 0; i < numE; i++){
+
+    Sum_Eff_Err_Tot_corr[i] = sqrt(Sum_Err_temp1[i]);
+    Sum_Eff_Err_Down_corr[i] = sqrt(Sum_Err_temp2[i]);
+    Sum_Eff_Err_Up_corr[i] = sqrt(Sum_Err_temp3[i]);
+    Sum_Eff_Err_Right_corr[i] = sqrt(Sum_Err_temp4[i]);
+    Sum_Eff_Err_Left_corr[i] = sqrt(Sum_Err_temp5[i]);
+    Sum_Eff_Err_Above_corr[i] = sqrt(Sum_Err_temp6[i]);
+    Sum_Eff_Err_Below_corr[i] = sqrt(Sum_Err_temp7[i]);
+
+  }
+
+ //initializing arrays for regions of interest
+  double clover1[numE] = {};
+  double clover2[numE] = {};
+  double clover3[numE] = {};
+  double clover4[numE] = {};
+  double clover5[numE] = {};
+  double clover6[numE] = {};
+  double clover7[numE] = {};
+  double clover8[numE] = {};
+  double clover9[numE] = {};
+  double clover10[numE] = {};
+  double clover11[numE] = {};
+  double clover12[numE] = {};
+  double clover13[numE] = {};
+  double clover14[numE] = {};
+  double clover15[numE] = {};
+  double clover16[numE] = {};
+  
+  //array of energies adouble belowefferr[numE] = {};analyzed in the experimental results
+  double energies[12] = {42.8,86.5,105.3,123.1,247.7,591.8,723.3,873.2,996.3,1004.7,1274.5,1596.4};
+  double energieserr[12] = {};
+  
+  //looping through the crystals
+  //this is probably unecessary since the summing corrections were added, but it might be convenient to have on hand if you want to see what the summing corrections did -DCS
+  for(int i = 0; i < numcrystals; i++){
+    //looping through energies
+    for(int j = 0; j < numE; j++){
+      //cout << "Efficiency[" << j << "][" << i << "]: " << Efficiency[j][i] << endl;
+      //checking to see if the crystal is downstream
+      if(i >= 0 && i <= 3) {
+	//populating downstream efficiency and error vectors
+	clover1[j] +=  Efficiency_corrected[j][i];
+      }
+      if(i >= 4 && i <= 7) {
+	clover2[j] +=  Efficiency_corrected[j][i];
+      } 
+      if(i >= 8 && i <= 11) {
+	clover3[j] +=  Efficiency_corrected[j][i];
+      } 
+      if(i >= 12 && i <= 15) {
+	clover4[j] +=  Efficiency_corrected[j][i];
+      } 
+      if(i >= 16 && i <= 19) {
+	clover5[j] +=  Efficiency_corrected[j][i];
+      } 
+      if(i >= 20 && i <= 23) {
+	clover6[j] +=  Efficiency_corrected[j][i];
+      } 
+      if(i >= 24 && i <= 27) {
+	clover7[j] +=  Efficiency_corrected[j][i];
+      } 
+      if(i >= 28 && i <= 31) {
+	clover8[j] +=  Efficiency_corrected[j][i];
+      } 
+      if(i >= 32 && i <= 35) {
+	clover9[j] +=  Efficiency_corrected[j][i];
+      } 
+      if(i >= 36 && i <= 39) {
+	clover10[j] +=  Efficiency_corrected[j][i];
+      } 
+      if(i >= 40 && i <= 43) {
+	clover11[j] +=  Efficiency_corrected[j][i];
+      } 
+      if(i >= 44 && i <= 47) {
+	clover12[j] +=  Efficiency_corrected[j][i];
+      } 
+      if(i >= 48 && i <= 51) {
+	clover13[j] +=  Efficiency_corrected[j][i];
+      } 
+      if(i >= 52 && i <= 55) {
+	clover14[j] +=  Efficiency_corrected[j][i];
+      } 
+      if(i >= 56 && i <= 59) {
+	clover15[j] +=  Efficiency_corrected[j][i];
+      } 
+      if(i >= 60 && i <= 63) {
+	clover16[j] +=  Efficiency_corrected[j][i];
+      } 
+       
+       
+    }
+
+  }
+
+
+  
+  //---------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
+  //----------end of summing corrections---------------------------------------
+  //---------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
+
+
+  //printing some quantitative values for comparison purposes
+ 
+  
+
+
+
+  //---------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
+  //----------Plotting stuff---------------------------------------------------
+  //---------------------------------------------------------------------------
+  //---------------------------------------------------------------------------
+
+
+  //creating root file to place graphs in
+  TFile *f = new TFile("efficiencies_2.root","recreate");
+
+    //sim plots
+    //sim plots
+
+  // TCanvas *c1graph1 = new TCanvas("addback","addback",800,600);
+  // TCanvas *c1graph2 = new TCanvas("simTotal","simTotal",800,600);
+  // TCanvas *c1graph3 = new TCanvas("simUpstream","simUpstream",800,600);
+  // TCanvas *c1graph4 = new TCanvas("simDownstream","simDownstream",800,600);
+  // TCanvas *c1graph5 = new TCanvas("simAbove","simAbove",800,600);
+  // TCanvas *c1graph6 = new TCanvas("simBelow","simBelow",800,600);
+  // TCanvas *c1graph7 = new TCanvas("simLeft","simLeft",800,600);
+  // TCanvas *c1graph8 = new TCanvas("simRight","simRight",800,600);
+
+  //canvases for comparing experimental and simulated crystal efficiencies
+ 
+  //canvas for displaying all the graphs at the same time
+  //DivideSquare function allows for uneven number of graphs to be displayed
+  TCanvas *c1 = new TCanvas("All", "All", 1000, 1200);
+  c1->Divide(4,4);
+  TCanvas *c2 = new TCanvas("Total", "Total", 1000, 1200);
+
+  //multigraphs for showing both TGraphs at once for each region
+  TMultiGraph *One = new TMultiGraph();
+  TMultiGraph *Two = new TMultiGraph();
+  TMultiGraph *Three = new TMultiGraph();
+  TMultiGraph *Four = new TMultiGraph();
+  TMultiGraph *Five = new TMultiGraph();
+  TMultiGraph *Six = new TMultiGraph();
+  TMultiGraph *Seven = new TMultiGraph();
+  TMultiGraph *Eight = new TMultiGraph();
+  TMultiGraph *Nine = new TMultiGraph();
+  TMultiGraph *Ten = new TMultiGraph();  TMultiGraph *Eleven = new TMultiGraph();
+  TMultiGraph *Twelve = new TMultiGraph();
+  TMultiGraph *Thirteen = new TMultiGraph();
+  TMultiGraph *Fourteen = new TMultiGraph();
+  TMultiGraph *Fifteen = new TMultiGraph();
+  TMultiGraph *Sixteen = new TMultiGraph();
+  TMultiGraph *total = new TMultiGraph();
+  
+  
+
+    
+  Double_t ex[numE] = {};
+  // Double_t Edouble_Full[simnumE];
+  // Double_t Edouble_trunc[numE];
+
+
+  // for(int i = 0; i < simnumE; i++){
+  //   Edouble_Full[i] = (Double_t)Energy[i];
+  // }
+
+
+
+  double totalSim [numE];
+
+  for (int i = 0; i < numE; i++){
+    totalSim[i] = sim_crystal1_trunc[i] + sim_crystal2_trunc[i] + sim_crystal3_trunc[i] + sim_crystal5_trunc[i] + sim_crystal6_trunc[i] + 
+      sim_crystal7_trunc[i] + sim_crystal8_trunc[i] + sim_crystal9_trunc[i] + sim_crystal10_trunc[i] + sim_crystal11_trunc[i] + sim_crystal12_trunc[i] + sim_crystal13_trunc[i] + 
+      sim_crystal14_trunc[i] + sim_crystal15_trunc[i] + sim_crystal16_trunc[i] + sim_crystal17_trunc[i];
+  }
+
+  double tot [12];
+
+  for (int i = 0; i < 12; i++){
+    tot[i] = clover1[i] + clover2[i] + clover3[i] + clover4[i] + clover5[i] + clover6[i] + clover7[i] + clover8[i] + clover9[i] + clover10[i] + clover11[i] + clover12[i] + clover13[i] + clover14[i] + clover15[i] + clover16[i]; 
+  }
+
+
+ 
+
+  //simulation TGraphs
+  auto grs1 = new TGraph(numE,energies,sim_crystal1_trunc);
+  auto grs2 = new TGraph(numE,energies,sim_crystal2_trunc);
+  auto grs3 = new TGraph(numE,energies,sim_crystal3_trunc);
+  auto grs17 = new TGraph(numE,energies,sim_crystal17_trunc);
+  auto grs5 = new TGraph(numE,energies,sim_crystal5_trunc);
+  auto grs6 = new TGraph(numE,energies,sim_crystal6_trunc);
+  auto grs7 = new TGraph(numE,energies,sim_crystal7_trunc);
+  auto grs8 = new TGraph(numE,energies,sim_crystal8_trunc);
+  auto grs9 = new TGraph(numE,energies,sim_crystal9_trunc);
+  auto grs10 = new TGraph(numE,energies,sim_crystal10_trunc);
+  auto grs11 = new TGraph(numE,energies,sim_crystal11_trunc);
+  auto grs12 = new TGraph(numE,energies,sim_crystal12_trunc);
+  auto grs13 = new TGraph(numE,energies,sim_crystal13_trunc);
+  auto grs14 = new TGraph(numE,energies,sim_crystal14_trunc);
+  auto grs15 = new TGraph(numE,energies,sim_crystal15_trunc);
+  auto grs16 = new TGraph(numE,energies,sim_crystal16_trunc);
+  auto tots = new TGraph(numE,energies,totalSim);
+  
+  
+  //experiment TGraphs
+  
+  auto gre1 = new TGraph(12,energies,clover1);
+  auto gre2 = new TGraph(12,energies,clover2);
+  auto gre3 = new TGraph(12,energies,clover3);
+  auto gre4 = new TGraph(12,energies,clover4);
+  auto gre5 = new TGraph(12,energies,clover5);
+  auto gre6 = new TGraph(12,energies,clover6);
+  auto gre7 = new TGraph(12,energies,clover7);
+  auto gre8 = new TGraph(12,energies,clover8);
+  auto gre9 = new TGraph(12,energies,clover9);
+  auto gre10 = new TGraph(12,energies,clover10);
+  auto gre11 = new TGraph(12,energies,clover11);
+  auto gre12 = new TGraph(12,energies,clover12);
+  auto gre13 = new TGraph(12,energies,clover13);
+  auto gre14 = new TGraph(12,energies,clover14);
+  auto gre15 = new TGraph(12,energies,clover15);
+  auto gre16 = new TGraph(12,energies,clover16);
+  auto tote = new TGraph(12,energies,tot);
+  
+  
+  //setting simulation points in blue
+  grs1->SetMarkerColor(kBlue);
+  grs2->SetMarkerColor(kBlue);
+  grs3->SetMarkerColor(kBlue);
+  grs17->SetMarkerColor(kBlue);
+  grs5->SetMarkerColor(kBlue);
+  grs6->SetMarkerColor(kBlue);
+  grs7->SetMarkerColor(kBlue);
+  grs8->SetMarkerColor(kBlue);
+  grs9->SetMarkerColor(kBlue);
+  grs10->SetMarkerColor(kBlue);
+  grs10->SetMarkerColor(kBlue);
+  grs11->SetMarkerColor(kBlue);
+  grs12->SetMarkerColor(kBlue);
+  grs13->SetMarkerColor(kBlue);
+  grs14->SetMarkerColor(kBlue);
+  grs15->SetMarkerColor(kBlue);
+  grs16->SetMarkerColor(kBlue);
+  tots->SetMarkerColor(kBlue);
+
+
+  grs1->SetTitle("Simulation");
+  grs2->SetTitle("Simulation");
+  grs3->SetTitle("Simulation");
+  grs17->SetTitle("Simulation");
+  grs5->SetTitle("Simulation");
+  grs6->SetTitle("Simulation");
+  grs7->SetTitle("Simulation");
+  grs8->SetTitle("Simulation");
+  grs9->SetTitle("Simulation");
+  grs10->SetTitle("Simulation");
+  grs11->SetTitle("Simulation");
+  grs12->SetTitle("Simulation");
+  grs13->SetTitle("Simulation");
+  grs14->SetTitle("Simulation");
+  grs15->SetTitle("Simulation");
+  grs16->SetTitle("Simulation");
+  tots->SetTitle("Simulation");
+
+  gre1->SetTitle("Fit Data");
+  gre2->SetTitle("Fit Data");
+  gre3->SetTitle("Fit Data");
+  gre4->SetTitle("Fit Data");
+  gre5->SetTitle("Fit Data");
+  gre6->SetTitle("Fit Data");
+  gre7->SetTitle("Fit Data");
+  gre8->SetTitle("Fit Data");
+  gre9->SetTitle("Fit Data");
+  gre10->SetTitle("Fit Data");
+  gre11->SetTitle("Fit Data");
+  gre12->SetTitle("Fit Data");
+  gre13->SetTitle("Fit Data");
+  gre14->SetTitle("Fit Data");
+  gre15->SetTitle("Fit Data");
+  gre16->SetTitle("Fit Data");
+  tote->SetTitle("Fit Data");
+
+  //setting experiment points in red
+  gre1->SetMarkerColor(kRed);
+  gre2->SetMarkerColor(kRed);
+  gre3->SetMarkerColor(kRed);
+  gre4->SetMarkerColor(kRed);
+  gre5->SetMarkerColor(kRed);
+  gre6->SetMarkerColor(kRed);
+  gre7->SetMarkerColor(kRed);
+  gre8->SetMarkerColor(kRed);
+  gre9->SetMarkerColor(kRed);
+  gre10->SetMarkerColor(kRed);
+  gre11->SetMarkerColor(kRed);
+  gre12->SetMarkerColor(kRed);
+  gre13->SetMarkerColor(kRed);
+  gre14->SetMarkerColor(kRed);
+  gre15->SetMarkerColor(kRed);
+  gre16->SetMarkerColor(kRed); 
+  tote->SetMarkerColor(kRed); 
+
+  //setting simulation marker styles
+  grs1->SetMarkerStyle(21);
+  grs2->SetMarkerStyle(21);
+  grs3->SetMarkerStyle(21);
+  grs17->SetMarkerStyle(21);
+  grs5->SetMarkerStyle(21);
+  grs6->SetMarkerStyle(21);
+  grs7->SetMarkerStyle(21);
+  grs8->SetMarkerStyle(21);
+  grs9->SetMarkerStyle(21);
+  grs10->SetMarkerStyle(21);
+  grs11->SetMarkerStyle(21);
+  grs12->SetMarkerStyle(21);
+  grs13->SetMarkerStyle(21);
+  grs14->SetMarkerStyle(21);
+  grs15->SetMarkerStyle(21);
+  grs16->SetMarkerStyle(21);
+  tots->SetMarkerStyle(21);
+
+  //setting experiment marker styles
+  gre1->SetMarkerStyle(20);
+  gre2->SetMarkerStyle(20);
+  gre3->SetMarkerStyle(20);
+  gre4->SetMarkerStyle(20);
+  gre5->SetMarkerStyle(20);
+  gre6->SetMarkerStyle(20);
+  gre7->SetMarkerStyle(20);
+  gre8->SetMarkerStyle(20);
+  gre9->SetMarkerStyle(20);
+  gre10->SetMarkerStyle(20);
+  gre11->SetMarkerStyle(20);
+  gre12->SetMarkerStyle(20);
+  gre13->SetMarkerStyle(20);
+  gre14->SetMarkerStyle(20);
+  gre15->SetMarkerStyle(20);
+  gre16->SetMarkerStyle(20);
+  tote->SetMarkerStyle(20);
+
+
+
+  //adding individual graphs to their multigraph and drawing those on their canvas
+
+  c1->cd(1);
+  One->Add(gre1);
+  One->Add(grs5);
+  One->GetHistogram()->SetTitle("One");
+  One->GetXaxis()->SetTitle("Energy (keV)");
+  One->GetYaxis()->SetTitle("Efficiency (percent)");
+  One->Draw("ap");
+  One->Write();
+  // One->BuildLegend(0.8,0.8,0.9,0.9);
+
+  c1->cd(2);
+  Two->Add(gre2);
+  Two->Add(grs10);
+  Two->GetHistogram()->SetTitle("Two");
+  Two->GetXaxis()->SetTitle("Energy (keV)");
+  Two->GetYaxis()->SetTitle("Efficiency (percent)");
+  Two->Draw("ap");
+  Two->Write();
+  // One->BuildLegend(0.8,0.8,0.9,0.9);
+
+  c1->cd(3);
+  Three->Add(gre3);
+  Three->Add(grs3);
+  Three->GetHistogram()->SetTitle("Three");
+  Three->GetXaxis()->SetTitle("Energy (keV)");
+  Three->GetYaxis()->SetTitle("Efficiency (percent)");
+  Three->Draw("ap");
+  Three->Write();
+  // One->BuildLegend(0.8,0.8,0.9,0.9);
+
+  c1->cd(4);
+  Four->Add(gre4);
+  Four->Add(grs11);
+  Four->GetHistogram()->SetTitle("Four");
+  Four->GetXaxis()->SetTitle("Energy (keV)");
+  Four->GetYaxis()->SetTitle("Efficiency (percent)");
+  
+  Four->Draw("ap");
+  Four->Write();
+  // One->BuildLegend(0.8,0.8,0.9,0.9);
+  
+  c1->cd(5);
+  Five->Add(gre5);
+  Five->Add(grs16);
+  Five->GetHistogram()->SetTitle("Five");
+  Five->GetXaxis()->SetTitle("Energy (keV)");
+  Five->GetYaxis()->SetTitle("Efficiency (percent)");
+  Five->Draw("ap");
+  Five->Write();
+  // One->BuildLegend(0.8,0.8,0.9,0.9);
+
+  c1->cd(6);
+  Six->Add(gre6);
+  Six->Add(grs6);
+  Six->GetHistogram()->SetTitle("Six");
+  Six->GetXaxis()->SetTitle("Energy (keV)");
+  Six->GetYaxis()->SetTitle("Efficiency (percent)");
+  Six->Draw("ap");
+  Six->Write();
+  // One->BuildLegend(0.8,0.8,0.9,0.9);
+
+  c1->cd(7);
+  Seven->Add(gre7);
+  Seven->Add(grs15);
+  Seven->GetHistogram()->SetTitle("Seven");
+  Seven->GetXaxis()->SetTitle("Energy (keV)");
+  Seven->GetYaxis()->SetTitle("Efficiency (percent)");
+  Seven->Draw("ap");
+  Seven->Write();
+  // One->BuildLegend(0.8,0.8,0.9,0.9);
+
+  c1->cd(8);
+  Eight->Add(gre8);
+  Eight->Add(grs9);
+  Eight->GetHistogram()->SetTitle("Eight");
+  Eight->GetXaxis()->SetTitle("Energy (keV)");
+  Eight->GetYaxis()->SetTitle("Efficiency (percent)");
+  Eight->Draw("ap");
+  Eight->Write();
+  // One->BuildLegend(0.8,0.8,0.9,0.9);
+
+  c1->cd(9);
+  Nine->Add(gre9);
+  Nine->Add(grs14);
+  Nine->GetHistogram()->SetTitle("Nine");
+  Nine->GetXaxis()->SetTitle("Energy (keV)");
+  Nine->GetYaxis()->SetTitle("Efficiency (percent)");
+  Nine->Draw("ap");
+  Nine->Write();
+  // One->BuildLegend(0.8,0.8,0.9,0.9);
+
+  c1->cd(10);
+  Ten->Add(gre10);
+  Ten->Add(grs2);
+  Ten->GetHistogram()->SetTitle("Ten");
+  Ten->GetXaxis()->SetTitle("Energy (keV)");
+  Ten->GetYaxis()->SetTitle("Efficiency (percent)");
+  Ten->Draw("ap");
+  Ten->Write();
+  // One->BuildLegend(0.8,0.8,0.9,0.9);
+
+  c1->cd(11);
+  Eleven->Add(gre11);
+  Eleven->Add(grs17);
+  Eleven->GetHistogram()->SetTitle("Eleven");
+  Eleven->GetXaxis()->SetTitle("Energy (keV)");
+  Eleven->GetYaxis()->SetTitle("Efficiency (percent)");
+  Eleven->Draw("ap");
+  Eleven->Write();
+  // One->BuildLegend(0.8,0.8,0.9,0.9);
+
+  c1->cd(12);
+  Twelve->Add(gre12);
+  Twelve->Add(grs12);
+  Twelve->GetHistogram()->SetTitle("Twelve");
+  Twelve->GetXaxis()->SetTitle("Energy (keV)");
+  Twelve->GetYaxis()->SetTitle("Efficiency (percent)");
+  Twelve->Draw("ap");
+  Twelve->Write();
+  // One->BuildLegend(0.8,0.8,0.9,0.9);
+
+  c1->cd(13);
+  Thirteen->Add(gre13);
+  Thirteen->Add(grs7);
+  Thirteen->GetHistogram()->SetTitle("Thirteen");
+  Thirteen->GetXaxis()->SetTitle("Energy (keV)");
+  Thirteen->GetYaxis()->SetTitle("Efficiency (percent)");
+  Thirteen->Draw("ap");
+  Thirteen->Write();
+  // One->BuildLegend(0.8,0.8,0.9,0.9);
+
+  c1->cd(14);
+  Fourteen->Add(gre14);
+  Fourteen->Add(grs8);
+  Fourteen->GetHistogram()->SetTitle("Fourteen");
+  Fourteen->GetXaxis()->SetTitle("Energy (keV)");
+  Fourteen->GetYaxis()->SetTitle("Efficiency (percent)");
+  Fourteen->Draw("ap");
+  Fourteen->Write();
+  // One->BuildLegend(0.8,0.8,0.9,0.9);
+
+  c1->cd(15);
+  Fifteen->Add(gre15);
+  Fifteen->Add(grs1);
+  Fifteen->GetHistogram()->SetTitle("Fifteen");
+  Fifteen->GetXaxis()->SetTitle("Energy (keV)");
+  Fifteen->GetYaxis()->SetTitle("Efficiency (percent)");
+  Fifteen->Draw("ap");
+  Fifteen->Write();
+  // One->BuildLegend(0.8,0.8,0.9,0.9);
+
+  c1->cd(16);
+  Sixteen->Add(gre16);
+  Sixteen->Add(grs13);
+  Sixteen->GetHistogram()->SetTitle("Sixteen");
+  Sixteen->GetXaxis()->SetTitle("Energy (keV)");
+  Sixteen->GetYaxis()->SetTitle("Efficiency (percent)");
+  Sixteen->Draw("ap");
+  Sixteen->Write();
+  // One->BuildLegend(0.8,0.8,0.9,0.9);
+
+
+  c2->cd();
+  total->Add(tote);
+  total->Add(tots);
+  total->GetHistogram()->SetTitle("Total");
+  total->GetXaxis()->SetTitle("Energy (keV)");
+  total->GetYaxis()->SetTitle("Efficiency (percent)");
+  total->Draw("ap");
+  total->Write();
+  
+  /*
+  Upstream->cd();
+  upmg->Add(gre3);
+  upmg->Add(grup);
+  upmg->GetHistogram()->SetTitle("Upstream");
+  upmg->GetXaxis()->SetTitle("Energy (keV)");
+  upmg->GetYaxis()->SetTitle("Efficiency (percent)");
+  upmg->Draw("ap");
+  upmg->Write();
+  Upstream->BuildLegend(0.8,0.8,0.9,0.9);
+
+  Downstream->cd();
+  dowmg->Add(gre4);
+  dowmg->Add(grdow);
+  dowmg->GetHistogram()->SetTitle("Downstream");
+  dowmg->GetXaxis()->SetTitle("Energy (keV)");
+  dowmg->GetYaxis()->SetTitle("Efficiency (percent)");
+  dowmg->Draw("ap");
+  dowmg->Write();
+  Downstream->BuildLegend(0.8,0.8,0.9,0.9);
+
+  Above->cd();
+  abomg->Add(gre5);
+  abomg->Add(grabo);
+  abomg->GetHistogram()->SetTitle("Above");
+  abomg->GetXaxis()->SetTitle("Energy (keV)");
+  abomg->GetYaxis()->SetTitle("Efficiency (percent)");
+  abomg->Draw("ap");
+  abomg->Write();
+  Above->BuildLegend(0.8,0.8,0.9,0.9);
+
+
+  Below->cd();
+  belmg->Add(gre6);
+  belmg->Add(grbel);
+  belmg->GetHistogram()->SetTitle("Below");
+  belmg->GetXaxis()->SetTitle("Energy (keV)");
+  belmg->GetYaxis()->SetTitle("Efficiency (percent)");
+  belmg->Draw("ap");
+  belmg->Write();
+  Below->BuildLegend(0.8,0.8,0.9,0.9);
+
+  Left->cd();
+  lefmg->Add(gre7);
+  lefmg->Add(grlef);
+  lefmg->GetHistogram()->SetTitle("Left");
+  lefmg->GetXaxis()->SetTitle("Energy (keV)");
+  lefmg->GetYaxis()->SetTitle("Efficiency (percent)");
+  lefmg->Draw("ap");
+  lefmg->Write();
+  Left->BuildLegend(0.8,0.8,0.9,0.9);
+
+  Right->cd();
+  rigmg->Add(gre8);
+  rigmg->Add(grrig);
+  rigmg->GetHistogram()->SetTitle("Right");
+  rigmg->GetXaxis()->SetTitle("Energy (keV)");
+  rigmg->GetYaxis()->SetTitle("Efficiency (percent)");
+  rigmg->Draw("ap");
+  rigmg->Write();
+  Right->BuildLegend(0.8,0.8,0.9,0.9);
+  */
+  
+  /*
+  All->cd(1);
+  totmg->Draw("ap");
+  auto legend3 = new TLegend(0.7,0.8,0.9,0.9);
+  legend3->AddEntry(gre4,"Simulation");
+  legend3->AddEntry(grlef,"Fit_Data");
+  legend3->Draw();
+  All->cd(2);
+  upmg->Draw("ap");
+  auto legend4 = new TLegend(0.7,0.8,0.9,0.9);
+  legend4->AddEntry(gre4,"Simulation");
+  legend4->AddEntry(grlef,"Fit_Data");
+  legend4->Draw();
+  All->cd(3);
+  dowmg->Draw("ap");
+  auto legend5 = new TLegend(0.7,0.8,0.9,0.9);
+  legend5->AddEntry(gre4,"Simulation");
+  legend5->AddEntry(grlef,"Fit_Data");
+  legend5->Draw();
+  All->cd(4);
+  rigmg->Draw("ap");
+  auto legend0 = new TLegend(0.7,0.8,0.9,0.9);
+  legend0->AddEntry(gre4,"Simulation");
+  legend0->AddEntry(grlef,"Fit_Data");
+  legend0->Draw();
+  All->cd(5);
+  lefmg->Draw("ap");
+  auto legend1 = new TLegend(0.7,0.8,0.9,0.9);
+  legend1->AddEntry(gre4,"Simulation");
+  legend1->AddEntry(grlef,"Fit_Data");
+  legend1->Draw();
+  All->cd(6);
+  abomg->Draw("ap");
+  auto legend2 = new TLegend(0.7,0.8,0.9,0.9);
+  legend2->AddEntry(gre4,"Simulation");
+  legend2->AddEntry(grlef,"Fit_Data");
+  legend2->Draw();
+  All->cd(7);
+  belmg->Draw("ap");
+  All->Write();
+  auto legend = new TLegend(0.7,0.8,0.9,0.9);
+  legend->AddEntry(gre4,"Simulation");
+  legend->AddEntry(grlef,"Fit_Data");
+  legend->Draw();
+
+
+
+
+
+
+
+  */
+
+    
+}

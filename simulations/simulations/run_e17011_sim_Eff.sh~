@@ -1,0 +1,20 @@
+#!/bin/bash
+
+./e17011_sim macros_e17011/e17011_Eff_25keV_no_Vis.mac
+./e17011_sim macros_e17011/e17011_Eff_50keV_no_Vis.mac
+./e17011_sim macros_e17011/e17011_Eff_100keV_no_Vis.mac
+./e17011_sim macros_e17011/e17011_Eff_200keV_no_Vis.mac
+./e17011_sim macros_e17011/e17011_Eff_500keV_no_Vis.mac
+./e17011_sim macros_e17011/e17011_Eff_1000keV_no_Vis.mac
+./e17011_sim macros_e17011/e17011_Eff_2000keV_no_Vis.mac
+./e17011_sim macros_e17011/e17011_Eff_3000keV_no_Vis.mac
+./e17011_sim macros_e17011/e17011_Eff_4000keV_no_Vis.mac
+./e17011_sim macros_e17011/e17011_Eff_5000keV_no_Vis.mac
+
+
+
+
+
+
+
+

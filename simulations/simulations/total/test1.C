@@ -1,0 +1,684 @@
+#include <iostream>
+#include <array>
+#include "Riostream.h"
+
+
+
+//defining functions to be used later
+
+void Print(vector<Double_t> v)
+{
+  for(int i=0; i<v.size(); i++)
+    cout << v[i] << " ";
+  cout << "\n";
+}
+
+
+// Summed efficiency
+Double_t SumEff(vector<Double_t> v)
+{
+  Double_t eff=0;
+  for(int i=0; i<v.size(); i++)
+    eff += v[i];
+  return eff;
+}
+
+
+// Summed efficiency error in quadrature
+Double_t SumEffErr(vector<Double_t> v)
+{
+  Double_t deff=0;
+  for(int i=0; i<v.size(); i++)
+    deff += v[i]*v[i];
+  return sqrt(deff);
+}
+
+//creating a root file to draw objects to 
+TFile *f = new TFile("efficiencies.root","recreate");
+vector<int> downcrystals = {48,49,50,51,52,53,54,55,56,57,58,60,61,62,63};
+vector<int> upcrystals = {0,1,2,3,4,6,8,10,11,12,13,14,15,16,17,18,19,20,21,22,23,24,25,26,27,28,29,30,31,32,33,34,35,36,37,39,40,41,42,43,44,45,46,47};
+vector<int> abovecrystals = {4,6,24,25,26,27,28,29,30,31,32,33,34,35,52,53,54,55};
+vector<int> belowcrystals = {12,13,14,15,16,17,18,19,40,41,42,43,44,45,46,47,60,61,62,63};
+vector<int> rightcrystals = {0,1,2,3,16,17,18,19,20,21,22,23,24,25,26,27,48,49,50,51};
+vector<int> leftcrystals = {8,10,11,28,29,30,31,32,33,34,35,36,37,39,56,57,58};
+
+vector<Double_t> eff123, deff123, eff247, deff247, eff591, deff591, eff723, deff723, eff873, deff873, eff996, deff996, eff1004, deff1004, eff1274, deff1274, eff1596, deff1596, eff42, deff42, eff86, deff86, eff105, deff105;
+  //downstream efficiency vectors
+  vector<Double_t> eff123_down, deff123_down, eff247_down, deff247_down, eff591_down, deff591_down, eff723_down, deff723_down, eff873_down, deff873_down, eff996_down, deff996_down, eff1004_down, deff1004_down, eff1274_down, deff1274_down, eff1596_down, deff1596_down, eff42_down, deff42_down, eff86_down, deff86_down, eff105_down, deff105_down;
+  //upstream efficiency vectors
+  vector<Double_t> eff123_up, deff123_up, eff247_up, deff247_up, eff591_up, deff591_up, eff723_up, deff723_up, eff873_up, deff873_up, eff996_up, deff996_up, eff1004_up, deff1004_up, eff1274_up, deff1274_up, eff1596_up, deff1596_up, eff42_up, deff42_up, eff86_up, deff86_up, eff105_up, deff105_up;
+  //left efficiency vectors
+  vector<Double_t> eff123_left, deff123_left, eff247_left, deff247_left, eff591_left, deff591_left, eff723_left, deff723_left, eff873_left, deff873_left, eff996_left, deff996_left, eff1004_left, deff1004_left, eff1274_left, deff1274_left, eff1596_left, deff1596_left, eff42_left, deff42_left, eff86_left, deff86_left, eff105_left, deff105_left;
+  //right efficiency vectors
+  vector<Double_t> eff123_right, deff123_right, eff247_right, deff247_right, eff591_right, deff591_right, eff723_right, deff723_right, eff873_right, deff873_right, eff996_right, deff996_right, eff1004_right, deff1004_right, eff1274_right, deff1274_right, eff1596_right, deff1596_right, eff42_right, deff42_right, eff86_right, deff86_right, eff105_right, deff105_right;
+  //above efficiency vectors
+  vector<Double_t> eff123_above, deff123_above, eff247_above, deff247_above, eff591_above, deff591_above, eff723_above, deff723_above, eff873_above, deff873_above, eff996_above, deff996_above, eff1004_above, deff1004_above, eff1274_above, deff1274_above, eff1596_above, deff1596_above, eff42_above, deff42_above, eff86_above, deff86_above, eff105_above, deff105_above;
+  //below efficiency vectors
+  vector<Double_t> eff123_below, deff123_below, eff247_below, deff247_below, eff591_below, deff591_below, eff723_below, deff723_below, eff873_below, deff873_below, eff996_below, deff996_below, eff1004_below, deff1004_below, eff1274_below, deff1274_below, eff1596_below, deff1596_below, eff42_below, deff42_below, eff86_below, deff86_below, eff105_below, deff105_below;
+
+
+
+void total()
+{
+  ifstream infile;
+
+  // Values to read in from results file
+  Double_t energy, chan, dchan, cts, dcts, eff, deff;
+
+
+  // Results storage -- some kind of n-dimensional array likely better but lets      do it quick
+  //adding eff42, deff42, eff86, deff86 05/04/2021 DCS
+  //total efficiency vectors
+  // vector<Double_t> eff123, deff123, eff247, deff247, eff591, deff591, eff723, deff723, eff873, deff873, eff996, deff996, eff1004, deff1004, eff1274, deff1274, eff1596, deff1596, eff42, deff42, eff86, deff86, eff105, deff105;
+  // //downstream efficiency vectors
+  // vector<Double_t> eff123_down, deff123_down, eff247_down, deff247_down, eff591_down, deff591_down, eff723_down, deff723_down, eff873_down, deff873_down, eff996_down, deff996_down, eff1004_down, deff1004_down, eff1274_down, deff1274_down, eff1596_down, deff1596_down, eff42_down, deff42_down, eff86_down, deff86_down, eff105_down, deff105_down;
+  // //upstream efficiency vectors
+  // vector<Double_t> eff123_up, deff123_up, eff247_up, deff247_up, eff591_up, deff591_up, eff723_up, deff723_up, eff873_up, deff873_up, eff996_up, deff996_up, eff1004_up, deff1004_up, eff1274_up, deff1274_up, eff1596_up, deff1596_up, eff42_up, deff42_up, eff86_up, deff86_up, eff105_up, deff105_up;
+  // //left efficiency vectors
+  // vector<Double_t> eff123_left, deff123_left, eff247_left, deff247_left, eff591_left, deff591_left, eff723_left, deff723_left, eff873_left, deff873_left, eff996_left, deff996_left, eff1004_left, deff1004_left, eff1274_left, deff1274_left, eff1596_left, deff1596_left, eff42_left, deff42_left, eff86_left, deff86_left, eff105_left, deff105_left;
+  // //right efficiency vectors
+  // vector<Double_t> eff123_right, deff123_right, eff247_right, deff247_right, eff591_right, deff591_right, eff723_right, deff723_right, eff873_right, deff873_right, eff996_right, deff996_right, eff1004_right, deff1004_right, eff1274_right, deff1274_right, eff1596_right, deff1596_right, eff42_right, deff42_right, eff86_right, deff86_right, eff105_right, deff105_right;
+  // //above efficiency vectors
+  // vector<Double_t> eff123_above, deff123_above, eff247_above, deff247_above, eff591_above, deff591_above, eff723_above, deff723_above, eff873_above, deff873_above, eff996_above, deff996_above, eff1004_above, deff1004_above, eff1274_above, deff1274_above, eff1596_above, deff1596_above, eff42_above, deff42_above, eff86_above, deff86_above, eff105_above, deff105_above;
+  // //below efficiency vectors
+  // vector<Double_t> eff123_below, deff123_below, eff247_below, deff247_below, eff591_below, deff591_below, eff723_below, deff723_below, eff873_below, deff873_below, eff996_below, deff996_below, eff1004_below, deff1004_below, eff1274_below, deff1274_below, eff1596_below, deff1596_below, eff42_below, deff42_below, eff86_below, deff86_below, eff105_below, deff105_below;
+  
+  // Loop over file list
+  for(int i=0; i<64; i++) {
+
+    bool isdownstream = false;
+    bool isupstream = false;
+    bool isright = false;
+    bool isleft = false;
+    bool isabove = false;
+    bool isbelow = false;
+    
+   if(std::find(downcrystals.begin(), downcrystals.end(), i) != downcrystals.end()) {
+     isdownstream = true;
+    }
+   if(std::find(upcrystals.begin(), upcrystals.end(), i) != upcrystals.end()) {
+     isupstream = true;
+    }
+   if(std::find(rightcrystals.begin(), rightcrystals.end(), i) != rightcrystals.end()) {
+     isright = true;
+    }
+   if(std::find(leftcrystals.begin(), leftcrystals.end(), i) != leftcrystals.end()) {
+     isleft = true;
+    }
+   if(std::find(abovecrystals.begin(), abovecrystals.end(), i) != abovecrystals.end()) {
+     isabove = true;
+    }
+   if(std::find(belowcrystals.begin(), belowcrystals.end(), i) != belowcrystals.end()) {
+     isbelow = true;
+    }
+
+    infile.open(Form("Clover_%i_Results.txt",i));
+
+    if(!infile.is_open()) {
+      cerr << "File " << Form("Clover_%i_Results.txt",i) << " could not be opened, moving on...\n";
+    } else {
+      // Skip first two lines of calibration pars
+      infile.ignore(1000,'\n');
+      infile.ignore(1000,'\n');
+
+      // Reset
+      //energy = chan = dchan = cts = dcts = eff = deff = 0;
+
+      // Read in data
+      // Ugh... checking against the stream because its easy
+      while(infile >> energy >> chan >> dchan >> cts >> dcts >> eff >> deff) {
+	// // Print it back if you want
+	// cout << energy << " " << chan << " "  << dchan << " " << cts << " " << dcts << " " << eff << " " << deff << endl;
+       
+	// Thats just turrible, but at least it works
+	//42.8 keV
+	if(energy == 42.8) {
+	  eff42.push_back(eff);
+	  deff42.push_back(deff);
+	  if(isdownstream == true){
+	    eff42_down.push_back(eff);
+	    deff42_down.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff42_up.push_back(eff);
+	    deff42_up.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff42_left.push_back(eff);
+	    deff42_left.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff42_right.push_back(eff);
+	    deff42_right.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff42_below.push_back(eff);
+	    deff42_below.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff42_above.push_back(eff);
+	    deff42_above.push_back(deff);
+	  }
+	}
+	//86.5 keV
+	if(energy == 86.5) {
+	  eff86.push_back(eff);
+	  deff86.push_back(deff);
+	  if(isdownstream == true){
+	    eff86_down.push_back(eff);
+	    deff86_down.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff86_up.push_back(eff);
+	    deff86_up.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff86_left.push_back(eff);
+	    deff86_left.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff86_right.push_back(eff);
+	    deff86_right.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff86_below.push_back(eff);
+	    deff86_below.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff86_above.push_back(eff);
+	    deff86_above.push_back(deff);
+	  }
+	}
+	//105.3 keV
+	if(energy == 105.3) {
+	  eff105.push_back(eff);
+	  deff105.push_back(deff);
+	  if(isdownstream == true){
+	    eff105_down.push_back(eff);
+	    deff105_down.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff105_up.push_back(eff);
+	    deff105_up.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff105_left.push_back(eff);
+	    deff105_left.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff105_right.push_back(eff);
+	    deff105_right.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff105_below.push_back(eff);
+	    deff105_below.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff105_above.push_back(eff);
+	    deff105_above.push_back(deff);
+	  }
+	}
+	//123.1 keV
+	if(energy == 123.1) {
+	  eff123.push_back(eff);
+	  deff123.push_back(deff);
+	  if(isdownstream == true){
+	    eff123_down.push_back(eff);
+	    deff123_down.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff123_up.push_back(eff);
+	    deff123_up.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff123_left.push_back(eff);
+	    deff123_left.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff123_right.push_back(eff);
+	    deff123_right.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff123_below.push_back(eff);
+	    deff123_below.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff123_above.push_back(eff);
+	    deff123_above.push_back(deff);
+	  }
+	}
+	//247.7 keV
+	if(energy == 247.7) {
+	  eff247.push_back(eff);
+	  deff247.push_back(deff);
+	  if(isdownstream == true){
+	    eff247_down.push_back(eff);
+	    deff247_down.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff247_up.push_back(eff);
+	    deff247_up.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff247_left.push_back(eff);
+	    deff247_left.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff247_right.push_back(eff);
+	    deff247_right.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff247_below.push_back(eff);
+	    deff247_below.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff247_above.push_back(eff);
+	    deff247_above.push_back(deff);
+	  }
+	}
+	//591.8 keV
+	if(energy == 591.8) {
+	  eff591.push_back(eff);
+	  deff591.push_back(deff);
+	  if(isdownstream == true){
+	    eff591_down.push_back(eff);
+	    deff591_down.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff591_up.push_back(eff);
+	    deff591_up.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff591_left.push_back(eff);
+	    deff591_left.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff591_right.push_back(eff);
+	    deff591_right.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff591_below.push_back(eff);
+	    deff591_below.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff591_above.push_back(eff);
+	    deff591_above.push_back(deff);
+	  }
+	}
+	//723.3 keV
+	if(energy == 723.3) {
+	  eff723.push_back(eff);
+	  deff723.push_back(deff);
+	  if(isdownstream == true){
+	    eff723_down.push_back(eff);
+	    deff723_down.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff723_up.push_back(eff);
+	    deff723_up.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff723_left.push_back(eff);
+	    deff723_left.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff723_right.push_back(eff);
+	    deff723_right.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff723_below.push_back(eff);
+	    deff723_below.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff723_above.push_back(eff);
+	    deff723_above.push_back(deff);
+	  }
+	}
+	//873.2 keV
+	if(energy == 873.2) {
+	  eff873.push_back(eff);
+	  deff873.push_back(deff);
+	  if(isdownstream == true){
+	    eff873_down.push_back(eff);
+	    deff873_down.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff873_up.push_back(eff);
+	    deff873_up.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff873_left.push_back(eff);
+	    deff873_left.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff873_right.push_back(eff);
+	    deff873_right.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff873_below.push_back(eff);
+	    deff873_below.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff873_above.push_back(eff);
+	    deff873_above.push_back(deff);
+	  }
+	}
+	//996.3 keV
+	if(energy == 996.3) {
+	  eff996.push_back(eff);
+	  deff996.push_back(deff);
+	  if(isdownstream == true){
+	    eff996_down.push_back(eff);
+	    deff996_down.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff996_up.push_back(eff);
+	    deff996_up.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff996_left.push_back(eff);
+	    deff996_left.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff996_right.push_back(eff);
+	    deff996_right.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff996_below.push_back(eff);
+	    deff996_below.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff996_above.push_back(eff);
+	    deff996_above.push_back(deff);
+	  }
+	}
+	//1004.7keV
+	if(energy == 1004.7) {
+	  eff1004.push_back(eff);
+	  deff1004.push_back(deff);
+	  if(isdownstream == true){
+	    eff1004_down.push_back(eff);
+	    deff1004_down.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff1004_up.push_back(eff);
+	    deff1004_up.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff1004_left.push_back(eff);
+	    deff1004_left.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff1004_right.push_back(eff);
+	    deff1004_right.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff1004_below.push_back(eff);
+	    deff1004_below.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff1004_above.push_back(eff);
+	    deff1004_above.push_back(deff);
+	  }
+	}
+	//1274.5 keV
+	if(energy == 1274.5) {
+	  eff1274.push_back(eff);
+	  deff1274.push_back(deff);
+	  if(isdownstream == true){
+	    eff1274_down.push_back(eff);
+	    deff1274_down.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff1274_up.push_back(eff);
+	    deff1274_up.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff1274_left.push_back(eff);
+	    deff1274_left.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff1274_right.push_back(eff);
+	    deff1274_right.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff1274_below.push_back(eff);
+	    deff1274_below.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff1274_above.push_back(eff);
+	    deff1274_above.push_back(deff);
+	  }
+	}
+	//1596.4 keV
+	if(energy == 1596.4) {
+	  eff1596.push_back(eff);
+	  deff1596.push_back(deff);
+	  if(isdownstream == true){
+	    eff1596_down.push_back(eff);
+	    deff1596_down.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff1596_up.push_back(eff);
+	    deff1596_up.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff1596_left.push_back(eff);
+	    deff1596_left.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff1596_right.push_back(eff);
+	    deff1596_right.push_back(deff);
+	  }
+	  if(isdownstream == true){
+	    eff1596_below.push_back(eff);
+	    deff1596_below.push_back(deff);
+	  }
+	  if(isupstream == true){
+	    eff1596_above.push_back(eff);
+	    deff1596_above.push_back(deff);
+	  }
+	}
+      }    
+      infile.close();
+    }  
+  }
+
+  
+  // Hardcoding because... Because.
+  Double_t scale = 59./30.; // Crystals in experiment divided by crystal calibration files
+  Double_t x[12] = {42.8,86.5,105.3,123.1,247.7,591.8,723.3,873.2,996.3,1004.7,1274.5,1596.4};
+  Double_t ex[12] = {};
+  // Yikes
+  //total efficiency y vals
+  Double_t y[12] = {SumEff(eff42),SumEff(eff86),SumEff(eff105),SumEff(eff123),SumEff(eff247),SumEff(eff591),SumEff(eff723),SumEff(eff873),SumEff(eff996),SumEff(eff1004),SumEff(eff1274),SumEff(eff1596)};
+  Double_t ey[12] = {SumEffErr(deff42),SumEffErr(deff86),SumEffErr(deff105),SumEffErr(deff123),SumEffErr(deff247),SumEffErr(deff591),SumEffErr(deff723),SumEffErr(deff873),SumEffErr(deff996),SumEffErr(deff1004),SumEffErr(deff1274),SumEffErr(deff1596)};
+
+  //upstream efficiency y vals
+  Double_t y_up[12] = {SumEff(eff42_up),SumEff(eff86_up),SumEff(eff105_up),SumEff(eff123_up),SumEff(eff247_up),SumEff(eff591_up),SumEff(eff723_up),SumEff(eff873_up),SumEff(eff996_up),SumEff(eff1004_up),SumEff(eff1274_up),SumEff(eff1596_up)};
+  Double_t ey_up[12] = {SumEffErr(deff42_up),SumEffErr(deff86_up),SumEffErr(deff105_up),SumEffErr(deff123_up),SumEffErr(deff247_up),SumEffErr(deff591_up),SumEffErr(deff723_up),SumEffErr(deff873_up),SumEffErr(deff996_up),SumEffErr(deff1004_up),SumEffErr(deff1274_up),SumEffErr(deff1596_up)};
+
+  //downstream efficiency y vals
+  Double_t y_down[12] = {SumEff(eff42_down),SumEff(eff86_down),SumEff(eff105_down),SumEff(eff123_down),SumEff(eff247_down),SumEff(eff591_down),SumEff(eff723_down),SumEff(eff873_down),SumEff(eff996_down),SumEff(eff1004_down),SumEff(eff1274_down),SumEff(eff1596_down)};
+  Double_t ey_down[12] = {SumEffErr(deff42_down),SumEffErr(deff86_down),SumEffErr(deff105_down),SumEffErr(deff123_down),SumEffErr(deff247_down),SumEffErr(deff591_down),SumEffErr(deff723_down),SumEffErr(deff873_down),SumEffErr(deff996_down),SumEffErr(deff1004_down),SumEffErr(deff1274_down),SumEffErr(deff1596_down)};
+
+  //right efficiency y vals
+  Double_t y_right[12] = {SumEff(eff42_right),SumEff(eff86_right),SumEff(eff105_right),SumEff(eff123_right),SumEff(eff247_right),SumEff(eff591_right),SumEff(eff723_right),SumEff(eff873_right),SumEff(eff996_right),SumEff(eff1004_right),SumEff(eff1274_right),SumEff(eff1596_right)};
+  Double_t ey_right[12] = {SumEffErr(deff42_right),SumEffErr(deff86_right),SumEffErr(deff105_right),SumEffErr(deff123_right),SumEffErr(deff247_right),SumEffErr(deff591_right),SumEffErr(deff723_right),SumEffErr(deff873_right),SumEffErr(deff996_right),SumEffErr(deff1004_right),SumEffErr(deff1274_right),SumEffErr(deff1596_right)};
+
+  //left efficiency y vals
+  Double_t y_left[12] = {SumEff(eff42_left),SumEff(eff86_left),SumEff(eff105_left),SumEff(eff123_left),SumEff(eff247_left),SumEff(eff591_left),SumEff(eff723_left),SumEff(eff873_left),SumEff(eff996_left),SumEff(eff1004_left),SumEff(eff1274_left),SumEff(eff1596_left)};
+  Double_t ey_left[12] = {SumEffErr(deff42_left),SumEffErr(deff86_left),SumEffErr(deff105_left),SumEffErr(deff123_left),SumEffErr(deff247_left),SumEffErr(deff591_left),SumEffErr(deff723_left),SumEffErr(deff873_left),SumEffErr(deff996_left),SumEffErr(deff1004_left),SumEffErr(deff1274_left),SumEffErr(deff1596_left)};
+
+  //above efficiency y vals
+  Double_t y_above[12] = {SumEff(eff42_above),SumEff(eff86_above),SumEff(eff105_above),SumEff(eff123_above),SumEff(eff247_above),SumEff(eff591_above),SumEff(eff723_above),SumEff(eff873_above),SumEff(eff996_above),SumEff(eff1004_above),SumEff(eff1274_above),SumEff(eff1596_above)};
+  Double_t ey_above[12] = {SumEffErr(deff42_above),SumEffErr(deff86_above),SumEffErr(deff105_above),SumEffErr(deff123_above),SumEffErr(deff247_above),SumEffErr(deff591_above),SumEffErr(deff723_above),SumEffErr(deff873_above),SumEffErr(deff996_above),SumEffErr(deff1004_above),SumEffErr(deff1274_above),SumEffErr(deff1596_above)};
+
+  //below efficiency y vals
+  Double_t y_below[12] = {SumEff(eff42_below),SumEff(eff86_below),SumEff(eff105_below),SumEff(eff123_below),SumEff(eff247_below),SumEff(eff591_below),SumEff(eff723_below),SumEff(eff873_below),SumEff(eff996_below),SumEff(eff1004_below),SumEff(eff1274_below),SumEff(eff1596_below)};
+  Double_t ey_below[12] = {SumEffErr(deff42_below),SumEffErr(deff86_below),SumEffErr(deff105_below),SumEffErr(deff123_below),SumEffErr(deff247_below),SumEffErr(deff591_below),SumEffErr(deff723_below),SumEffErr(deff873_below),SumEffErr(deff996_below),SumEffErr(deff1004_below),SumEffErr(deff1274_below),SumEffErr(deff1596_below)};
+
+  // Remove statistics box and title
+  gStyle->SetOptStat(0);
+  gStyle->SetOptTitle(0);
+
+  // // Total Efficiency vs energy plot
+  // auto grt = new TGraphErrors(12,x,y,ex,ey);
+  // grt->SetMarkerStyle(21);
+  // grt->GetXaxis()->SetTitle("Energy [keV]");
+  // grt->GetYaxis()->SetTitle("Efficiency [%]");
+  
+  // Fit function for efficiency (from radware high energy component)
+  //adjusting elow to encompass the lowest energies DCS 05/04/2021
+  // double elow = 25;
+  // double ehigh = 1800;
+  // TF1* fitf = new TF1("fitf","exp([0]+[1]*log(x)+[2]*log(x)*log(x))",elow,ehigh);
+  // fitf->SetParameter(0,-3);
+  // fitf->SetParameter(1,1.5);
+  // fitf->SetParameter(2,-0.2);
+  // grt->Fit("fitf","RQ");
+
+  // Efficiency confidence intervals
+  // int npts = 1000;
+  // double range = ehigh-elow;
+  // double step = range/npts;
+  // TGraphErrors* ci = new TGraphErrors(npts);
+  // for(Int_t i=0; i<npts; i++)
+  //   ci->SetPoint(i, elow+i*step, 0);
+  // (TVirtualFitter::GetFitter())->GetConfidenceIntervals(ci,0.6827); // 1 sigma
+  // ci->SetFillColorAlpha(kRed,0.25); // Only shows up on output, canvas doesnt display correctly
+
+  // auto Total = new TCanvas("Total","Total",800,600);
+  // grt->Draw("ap");
+  // //ci->Draw("e3 same");
+  // Total->Write();
+  // Total->SaveAs("efficiencyTOTAL.png");
+
+//   // Calculate efficiencies for 76Zn in order per NNDC
+//   // Annoying conversion away from % to probabilities
+//   double egamma[6] = {340.89,511.0,575.0,598.68,697.78,1337.09};
+//   double eff_gamma[6] = {};
+//   double err_eff_gamma[6] = {};
+//   cout << "-----------------------------------------" << endl;
+//   cout << "----------- 76Zn efficiencies -----------" << endl;
+//   cout << "-----------------------------------------" << endl;
+//   for(int i=0; i<6; i++) {
+//     for(int j=1; j<npts; j++) {
+//       double x0 = elow+(j-1)*step;
+//       double y0 = ci->Eval(x0)/100.;
+//       double ey0 = ci->GetEY()[j-1]/100.0;
+//       double x1 = elow+j*step;
+//       double y1 = ci->Eval(x1)/100.;
+//       double ey1 = ci->GetEY()[j]/100.0;
+
+//       // Do linear interpolation to get efficiencies for gamma-ray list
+//       if(x1 > egamma[i]) {
+// 	eff_gamma[i] = y0 + (egamma[i]-x0)*(y1-y0)/(x1-x0);
+// 	err_eff_gamma[i] = ey0 + (egamma[i]-x0)*(ey1-ey0)/(x1-x0);
+// 	cout << egamma[i] << ": " << 100.0*eff_gamma[i] << " +/- " << 100.0*err_eff_gamma[i] << " %" << endl;
+// 	break;      
+//       }
+//     }
+//   }
+  
+// }
+
+// Total Efficiency vs energy plot
+  auto grtot = new TGraphErrors(12,x,y,ex,ey);
+  grtot->SetMarkerStyle(21);
+  grtot->GetXaxis()->SetTitle("Energy [keV]");
+  grtot->GetYaxis()->SetTitle("Efficiency [%]");
+  auto Total = new TCanvas("Total","Total",800,600);
+  grtot->Draw("ap");
+  //ci->Draw("e3 same");
+  Total->Write();
+  //Total->SaveAs("efficiencyTOTAL.png");
+
+// Downstream Efficiency vs energy plot
+  auto grdow = new TGraphErrors(12,x,y_down,ex,ey_down);
+  grdow->SetMarkerStyle(21);
+  grdow->GetXaxis()->SetTitle("Energy [keV]");
+  grdow->GetYaxis()->SetTitle("Efficiency [%]");
+  auto downstream = new TCanvas("downstream","downstream",800,600);
+  grdow->Draw("ap");
+  //ci->Draw("e3 same");
+  downstream->Write();
+  //Total->SaveAs("efficiencyTOTAL.png");
+
+// Upstream Efficiency vs energy plot
+  auto grup = new TGraphErrors(12,x,y_up,ex,ey_up);
+  grup->SetMarkerStyle(21);
+  grup->GetXaxis()->SetTitle("Energy [keV]");
+  grup->GetYaxis()->SetTitle("Efficiency [%]");
+  auto upstream = new TCanvas("upstream","upstream",800,600);
+  grup->Draw("ap");
+  //ci->Draw("e3 same");
+  upstream->Write();
+  //Total->SaveAs("efficiencyTOTAL.png");
+
+// Right Efficiency vs energy plot
+  auto grrig = new TGraphErrors(12,x,y_right,ex,ey_right);
+  grrig->SetMarkerStyle(21);
+  grrig->GetXaxis()->SetTitle("Energy [keV]");
+  grrig->GetYaxis()->SetTitle("Efficiency [%]");
+  auto right = new TCanvas("right","right",800,600);
+  grrig->Draw("ap");
+  //ci->Draw("e3 same");
+  right->Write();
+  //Total->SaveAs("efficiencyTOTAL.png");
+
+// Left Efficiency vs energy plot
+  auto grlef = new TGraphErrors(12,x,y_left,ex,ey_left);
+  grlef->SetMarkerStyle(21);
+  grlef->GetXaxis()->SetTitle("Energy [keV]");
+  grlef->GetYaxis()->SetTitle("Efficiency [%]");
+  auto left = new TCanvas("left","left",800,600);
+  grlef->Draw("ap");
+  //ci->Draw("e3 same");
+  left->Write();
+  //Total->SaveAs("efficiencyTOTAL.png");
+
+// Above Efficiency vs energy plot
+  auto grabo = new TGraphErrors(12,x,y_above,ex,ey_above);
+  grabo->SetMarkerStyle(21);
+  grabo->GetXaxis()->SetTitle("Energy [keV]");
+  grabo->GetYaxis()->SetTitle("Efficiency [%]");
+  auto above = new TCanvas("above","above",800,600);
+  grabo->Draw("ap");
+  //ci->Draw("e3 same");
+  above->Write();
+  //Total->SaveAs("efficiencyTOTAL.png");
+
+// Below Efficiency vs energy plot
+  auto grbel = new TGraphErrors(12,x,y_below,ex,ey_below);
+  grbel->SetMarkerStyle(21);
+  grbel->GetXaxis()->SetTitle("Energy [keV]");
+  grbel->GetYaxis()->SetTitle("Efficiency [%]");
+  auto below = new TCanvas("below","below",800,600);
+  grbel->Draw("ap");
+  //ci->Draw("e3 same");
+  below->Write();
+  //Total->SaveAs("efficiencyTOTAL.png");
+
+ 
+}
+
+ 
+//-------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------
+//                  main function which evaluates all the other functions
+//-------------------------------------------------------------------------------------------
+//-------------------------------------------------------------------------------------------
+
+void test1()
+{
+
+
+  
+
+  return total();
+
+
+
+}
+

@@ -1,0 +1,26 @@
+#include <iostream>
+#include <vector>
+#include <array>
+#include "Riostream.h"
+
+//mapping proof of concept
+void test(){
+
+  double origin[4][2] = {0,1,2,3,4,5,6,7};
+  int map[4] = {3,1,2,0};
+  double aligned[4][2] = {};
+  
+  int mapper;
+  for(int i = 0; i < 4; i++){
+    for(int j = 0; j < 2; j++){
+	mapper = map[i];
+	//cout << mapper << endl;
+	aligned[i][j] = origin[mapper][j];
+	cout << "aligned[" << i << "][" << j << "]: " << aligned[i][j] << " " << "origin[" << i << "][" << j << "]: " << origin[i][j] << endl;
+    }
+  }
+
+
+}
+
+

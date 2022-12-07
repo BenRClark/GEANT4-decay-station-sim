@@ -1,0 +1,6 @@
+line 1
+line 2
+line 3
+/gps/position 2 4 3.2 cm
+line 5
+line 6
