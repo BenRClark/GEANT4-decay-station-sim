@@ -1,0 +1,118 @@
+###############################################################################
+#                                                                         #
+# THIS TEST GENERATES NUCLEI OF F-24 AT THE CENTRE OF THE TARGET 
+# WHICH IS THE ORIGIN. 
+#  
+################################################################################
+
+
+#filename
+
+/e17011_sim/analysis/filename /data/e17011/simulations/analysis/simrootfiles/582keVtest_brc339
+
+
+#/gedssd_bc/analysis/dirname
+#/e17011_sim/analysis/filename /home/dcs411/geant4_workdir/bin/Linux-g++/sim_source_test_results 
+#/e17011_sim/analysis/filename /data/e17011/simulations/analysis/e17011_Eff_1000#keV_test
+
+#Physics lists
+
+#/gedssd_bc/phys/SelectPhysics LowEnergy_EM_Livermore
+#/gedssd_bc/phys/SelectPhysics LowEnergy_EM
+#/gedssd_bc/phys/SelectPhysics Standard_EM
+
+#Pick the detectors to visualize
+
+#
+#uncommonly used detectors - set to false unless you need 
+#something specific here
+/e17011_sim/det/Use3Hen false
+/e17011_sim/det/UseMTC false
+/e17011_sim/det/UseLENDA false
+/e17011_sim/det/UseGetest false
+/e17011_sim/det/UseEXOtest false
+
+#more commonly used detectors in beta decay setups
+/e17011_sim/det/UseSiDSSD false
+/e17011_sim/det/setGeThickDetectorThickness 15 mm
+/e17011_sim/det/setGeThinDetectorMate Vacuum
+/e17011_sim/det/UseGeThickDetector false
+/e17011_sim/det/UseGeThickDetectorCryo false
+/e17011_sim/det/UseGeThickDetectorCryoEndCap false
+/e17011_sim/det/UseGeThinDetector false
+/e17011_sim/det/UseSega true
+/e17011_sim/det/UseClover true
+/e17011_sim/det/UseLaBr3 true
+/e17011_sim/det/UseEJ204Scint false
+/e17011_sim/det/UseCeBr3Scint true
+/e17011_sim/det/UsePipe true
+/e17011_sim/det/UsePSPMT true
+/e17011_sim/det/UseLaBr3Frame false
+
+#initialize
+
+/run/initialize
+#/run/setCutForRegion GeThickDetector 0.010 mm
+
+#open with OpenGL
+
+#/vis/open OGL 1050x1050-0+0
+#/vis/open OGLSX 900x900-0+0
+
+# Disable auto refresh and quieten vis messages whilst scene and
+# trajectories are established:
+#/vis/viewer/set/autoRefresh false
+#/vis/verbose errors
+
+
+#draw the volume
+
+#/vis/scene/create
+#/vis/open HepRepFile
+#/vis/drawVolume
+
+#trajectory stuff
+
+#/vis/scene/add/trajectories
+#/vis/viewer/flush
+
+#add coordinate axes
+
+#/vis/scene/add/axes 0 0 0 0.3 m
+
+#/vis/viewer/set/style surface
+#/vis/viewer/set/style wireframe
+#/vis/viewer/set/hiddenEdge 1
+
+#/vis/scene/add/trajectories
+#/vis/scene/add/hits
+
+#/vis/scene/endOfEventAction accumulate
+#/vis/viewer/set/autoRefresh true
+#/vis/verbose warnings
+
+/grdm/allVolumes
+
+#source
+
+#/gps/position 0.3 0 6.85 cm
+#/gps/position 0.65 0.4 7.30 cm
+/gps/ang/type iso
+/gps/position 0 0 -0.16 cm
+/gps/energy 582.0 keV
+/gps/particle gamma
+#/gps/ion 63 155 0 0
+#/gps/energy 1000 keV
+/gps/particle gamma
+#ion 
+#/gps/ion 28 90 0  0
+#
+
+#adjust this value back to 10000000 when finished tinkering
+
+/run/beamOn 10000000
+
+
+# Re-establish auto refreshing and verbosity:
+#/vis/viewer/set/autoRefresh true
+#/vis/verbose warnings

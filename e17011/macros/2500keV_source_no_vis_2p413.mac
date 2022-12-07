@@ -1,0 +1,137 @@
+
+
+
+###############################################################################
+#                                                                         #
+# THIS TEST GENERATES NUCLEI OF F-24 AT THE CENTRE OF THE TARGET 
+# WHICH IS THE ORIGIN. 
+#  
+################################################################################
+
+#filename
+
+#/gedssd_bc/analysis/dirname 
+/gedssd_bc/analysis/filename 2500keV
+
+#Physics lists
+
+/gedssd_bc/phys/SelectPhysics LowEnergy_EM_Livermore
+#/gedssd_bc/phys/SelectPhysics LowEnergy_EM
+#/gedssd_bc/phys/SelectPhysics Standard_EM
+
+#Pick the detectors to visualize
+
+#
+#/gedssd_bc/det/setGeThickDetectorThickness 15 mm
+#/gedssd_bc/det/setGeThinDetectorMate Vacuum
+#/gedssd_bc/det/UseGeThickDetector false
+#/gedssd_bc/det/UseGeThickDetectorCryo false
+#/gedssd_bc/det/UseGeThickDetectorCryoEndCap false
+#/gedssd_bc/det/UseGeThinDetector true
+#/gedssd_bc/det/UseSega true
+#/gedssd_bc/det/UseClover false
+/gedssd_bc/det/UseLaBr3 true
+/gedssd_bc/det/UseLaBr3Frame true
+
+#initialize
+
+/run/initialize
+#/run/setCutForRegion GeThickDetector 0.010 mm
+
+#open with OpenGL
+
+#/vis/open OGL
+#/vis/open OGLSX 900x900-0+0
+#/vis/open OGLIX 1050x1050-0+0
+#/vis/open OGLSQt
+#/vis/open OGLIQt
+
+# Disable auto refresh and quieten vis messages whilst scene and
+# trajectories are established:
+#/vis/viewer/set/autoRefresh false
+#/vis/verbose errors
+
+#draw the volume
+
+#/vis/drawVolume
+
+#Specify view angle
+#/vis/viewer/set/viewpointThetaPhi 20. 70.
+
+#hide hidden lines
+#/vis/viewer/set/hiddenEdge 1
+
+#set style to be surface
+#/vis/viewer/set/style surface
+
+#set style to be wireframe
+#/vis/viewer/set/style wireframe
+
+#flush viewer - used for file based viewers
+#/vis/viewer/flush
+
+#trajectories and hits
+
+#/vis/scene/add/trajectories smooth
+#/vis/scene/add/hits
+
+
+#cuts
+
+#/run/setCutForRegion Target 10 cm
+#/run/setCutForRegion GeThickDetector 0.010 mm
+#/run/setCutForRegion GeThinDetector 0.010 mm
+
+#verbosity
+
+#/run/verbose 0
+#/event/verbose 0
+#/tracking/verbose 0
+#/grdm/verbose 0
+
+#autorefresh stuff
+#/vis/scene/endOfEventAction accumulate
+#/vis/viewer/set/autoRefresh true
+#/vis/verbose warnings
+
+#volumes
+
+#/grdm/noVolumes
+#/grdm/selectVolume Detector
+/grdm/allVolumes
+
+#source
+
+#/gps/position 0.3 0 6.85 cm
+#/gps/position 0.65 0.4 7.30 cm
+/gps/position 0 0 2.413 mm
+#/gps/energy 123.1 keV
+/gps/particle gamma
+#/gps/ion 63 155 0 0
+/gps/energy 2500 keV
+/gps/ang/type iso
+#/gps/particle gamma
+#ion 
+#/gps/ion 28 90 0  0
+#
+
+# No daughter decays in analogue MC mode
+#/grdm/analogueMC 1
+#/grdm/nucleusLimits 90 90 28 28
+#/vis/disable
+
+#/vis/scene/endOfRunAction refresh
+/run/beamOn 100000
+
+# Re-establish auto refreshing and verbosity:
+#/vis/viewer/set/autoRefresh true
+#/vis/verbose warnings
+
+# set print mode to vectored
+#/vis/ogl/set/printMode vectored
+
+# set print size larger than screen
+#/vis/ogl/set/printSize 2000 2000
+
+# print
+#/vis/ogl/printEPS

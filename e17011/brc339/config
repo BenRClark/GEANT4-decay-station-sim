@@ -1,0 +1,8 @@
+[core]
+	repositoryformatversion = 0
+	filemode = true
+	bare = false
+	logallrefupdates = true
+[remote "origin"]
+	url = https://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@github.com/BenRClark/GEANT4-decay-station-sim
+	fetch = +refs/heads/*:refs/remotes/origin/*
